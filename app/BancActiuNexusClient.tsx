@@ -28,6 +28,7 @@ import {
   AppDefinition
 } from '@bancactiu/ui-glass';
 import { sharedDb } from '@bancactiu/db';
+import { resolveAppTargetUrl, isProductionEnvironment } from '@/lib/navigation';
 import { SuperAdminStressAndSecurityLabWorkspace } from '@/components/workspaces/SuperAdminStressAndSecurityLabWorkspace';
 import { SuperAdminAiAgentWorkspace } from '@/components/workspaces/SuperAdminAiAgentWorkspace';
 import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnboardingWorkspace';
@@ -65,8 +66,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
       setIsLauncherOpen(false);
       return;
     }
-    // Redirigeix al port o URL de l'aplicació seleccionada
-    window.location.href = `http://localhost:${app.port}`;
+    // Resolució intel·ligent d'URL: Localhost amb ports vs Vercel Cloud amb rutes relatives/dominis
+    const targetUrl = resolveAppTargetUrl(app.id, app.port);
+    window.location.href = targetUrl;
   };
 
   return (

@@ -208,6 +208,8 @@ export function KenzoAssistant() {
         reply = 'He activat el mode de Presentació de Diapositives (Slides Mode) a la pantalla principal per visualitzar el resum executiu.';
       } else if (lower.includes('centres') || lower.includes('gerencia')) {
         reply = 'Estat dels centres: 6 CAPs de la Gerència Metropolitana Sud integrats (Sant Ildefons, Bellvitge), Hospital de Bellvitge i Serveis Socials de Cornellà operatius.';
+      } else if (lower.includes('enllaç') || lower.includes('ruta') || lower.includes('local') || lower.includes('produccio') || lower.includes('vercel')) {
+        reply = 'Navegació dinàmica adaptativa activa: En local s\'apunta als ports 3000-3004, i a Vercel Cloud s\'utilitzen les rutes unificades (/salut, /municipal, /social, /operatiu) garantint zero fallades per localhost.';
       }
 
       setMessages(prev => [...prev, { sender: 'kenzo', text: reply, time: 'Ara' }]);

@@ -7,7 +7,9 @@
 
 ## 1. Característiques Principals
 
-* **Gateway Launcher**: Commutador central per a la navegació entre les 5 aplicacions del monorepo (`bancactiu-nexus`, `bancactiu-salut`, `bancactiu-municipal`, `bancactiu-social`, `bancactiu-operatiu`).
+* **Gateway Launcher & Navegació Adaptativa**:
+  * Commutador central amb resolució intel·ligent per entorn: ports locals (`localhost:3000-3004`) en desenvolupament vs rutes relatives unificades (`/salut`, `/municipal`, `/social`, `/operatiu`) a Vercel Cloud.
+  * Zero intents fallits cap a localhost a la infraestructura de producció.
 * **Seguretat Zero-Trust**:
   * Superadministrador arrel vinculat al DNI: **52622304Y**.
   * Formulari de login net (sense autofill ni dades de prova).
