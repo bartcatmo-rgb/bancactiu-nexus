@@ -33,6 +33,7 @@ import { SuperAdminAiAgentWorkspace } from '@/components/workspaces/SuperAdminAi
 import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnboardingWorkspace';
 import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/SuperAdminRolesAndServicesWorkspace';
 import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/SuperAdminInteroperabilityWorkspace';
+import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 
 interface BancActiuNexusClientProps {
   initialUser?: {
@@ -312,6 +313,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         <footer className="mt-6 pt-3 border-t border-white/10 text-center text-xs text-slate-500">
           BancActiu Nexus 2.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; Generalitat de Catalunya i Ajuntament de Cornellà
         </footer>
+        {/* Assistent Flotant Kenzo AI */}
+        <KenzoAssistant />
       </div>
     </RadialAuraBackground>
   );
