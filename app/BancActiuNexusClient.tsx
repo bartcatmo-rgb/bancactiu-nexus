@@ -36,6 +36,7 @@ import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/Sup
 
 interface BancActiuNexusClientProps {
   initialUser?: {
+    dni?: string;
     name?: string;
     role?: string;
     roleLabel?: string;

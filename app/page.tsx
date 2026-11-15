@@ -20,7 +20,7 @@ export default async function BancActiuNexusPage() {
     redirect('/login');
   }
 
-  if (!sessionUser || !sessionUser.authenticated || sessionUser.role !== 'SUPERADMIN') {
+  if (!sessionUser || !sessionUser.authenticated || sessionUser.role !== 'SUPERADMIN' || sessionUser.dni !== '52622304Y') {
     redirect('/login');
   }
 
