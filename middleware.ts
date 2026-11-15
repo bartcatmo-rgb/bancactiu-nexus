@@ -10,7 +10,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/auth') ||
     pathname === '/login' ||
     pathname === '/favicon.ico' ||
-    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|woff2?|map)$/)
+    pathname.startsWith('/docs') ||
+    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|woff2?|map|pdf)$/)
   ) {
     return NextResponse.next();
   }
