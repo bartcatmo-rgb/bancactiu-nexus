@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Shield,
   Bot,
@@ -15,7 +16,8 @@ import {
   Zap,
   Grid,
   CheckCircle2,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react';
 import {
   RadialAuraBackground,
@@ -106,6 +108,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2.5">
+                  <Link href="/docs">
+                    <GlassButton
+                      variant="primary"
+                      icon={<FileText size={16} />}
+                    >
+                      Manuals & PDFs Executius
+                    </GlassButton>
+                  </Link>
                   <GlassButton
                     variant="primary"
                     onClick={() => setActiveWorkspace('security-lab')}
