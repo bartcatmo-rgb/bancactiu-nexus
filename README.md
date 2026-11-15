@@ -13,8 +13,9 @@
   * Formulari de login net (sense autofill ni dades de prova).
   * Flux de primer accés per forçar la configuració d'una contrasenya robusta (ENS Nivell Alt).
   * Autenticació suportada per certificats digitals idCAT / T-CAT corporatius.
-* **Assistent Kenzo**:
-  * Assistent flotant intel·ligent amb informes d'auditoria, mètriques per mòdul i Mode de Presentació de Diapositives (Slides Mode).
+* **Assistent Kenzo (Selector d'Aparència Kenzo / Kenza / Kenz Core)**:
+  * Assistent flotant intel·ligent amb selector interactiu de perfils d'aparença (Masculí, Femení, Hologràfic Tecnològic) i persistència en `localStorage`.
+  * Informes d'auditoria Zero-Trust, mètriques en temps real per mòdul i Mode de Presentació de Diapositives (Slides Mode).
 * **Mòduls Administratius Avançats**:
   * Alta descentralitzada de centres sanitaris i municipals.
   * Gestió de rols, serveis i llocs de treball.

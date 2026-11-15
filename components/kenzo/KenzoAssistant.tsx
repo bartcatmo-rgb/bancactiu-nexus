@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bot,
   Sparkles,
@@ -26,13 +26,96 @@ import {
   Building2,
   HeartPulse,
   Users,
-  Boxes
+  Boxes,
+  Cpu,
+  User,
+  Palette
 } from 'lucide-react';
 import {
   GlassCard,
   GlassButton,
   GlassBadge
 } from '@bancactiu/ui-glass';
+
+export type AppearanceProfile = 'kenzo' | 'kenza' | 'core';
+
+interface ProfileMeta {
+  id: AppearanceProfile;
+  name: string;
+  role: string;
+  article: string;
+  badgeLabel: string;
+  triggerGradient: string;
+  triggerShadow: string;
+  triggerTextGlow: string;
+  avatarBg: string;
+  glowColor: 'purple' | 'cyan' | 'emerald';
+  accentText: string;
+  chatBadge: string;
+  iconType: 'masculine' | 'feminine' | 'cyber';
+  greetingText: string;
+}
+
+const PROFILES: Record<AppearanceProfile, ProfileMeta> = {
+  kenzo: {
+    id: 'kenzo',
+    name: 'Kenzo',
+    role: 'Assistent Executiu',
+    article: 'en Kenzo',
+    badgeLabel: 'Executiu',
+    triggerGradient: 'from-blue-600/90 via-indigo-600/90 to-purple-600/90',
+    triggerShadow: 'shadow-indigo-500/40',
+    triggerTextGlow: 'text-cyan-300',
+    avatarBg: 'bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600',
+    glowColor: 'purple',
+    accentText: 'text-cyan-300',
+    chatBadge: 'Kenzo AI',
+    iconType: 'masculine',
+    greetingText: "Hola, Mireia Valls. Sóc en Kenzo, l'assistent executiu d'intel·ligència artificial i ciberseguretat de BancActiu Nexus 2.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
+  },
+  kenza: {
+    id: 'kenza',
+    name: 'Kenza',
+    role: 'Assistenta Executiva',
+    article: 'la Kenza',
+    badgeLabel: 'Executiva',
+    triggerGradient: 'from-rose-600/90 via-purple-600/90 to-amber-600/90',
+    triggerShadow: 'shadow-rose-500/40',
+    triggerTextGlow: 'text-rose-300',
+    avatarBg: 'bg-gradient-to-tr from-rose-500 via-pink-600 to-purple-600',
+    glowColor: 'purple',
+    accentText: 'text-rose-300',
+    chatBadge: 'Kenza AI',
+    iconType: 'feminine',
+    greetingText: "Hola, Mireia Valls. Sóc la Kenza, l'assistenta executiva d'intel·ligència artificial i coordinació institucional de BancActiu Nexus 2.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
+  },
+  core: {
+    id: 'core',
+    name: 'Kenz Core',
+    role: 'Nucli IA Hologràfic',
+    article: 'Kenz Core',
+    badgeLabel: 'Hologràfic',
+    triggerGradient: 'from-emerald-600/90 via-teal-600/90 to-cyan-600/90',
+    triggerShadow: 'shadow-teal-500/40',
+    triggerTextGlow: 'text-emerald-300',
+    avatarBg: 'bg-gradient-to-tr from-emerald-500 via-teal-600 to-cyan-600',
+    glowColor: 'emerald',
+    accentText: 'text-emerald-300',
+    chatBadge: 'Kenz Core',
+    iconType: 'cyber',
+    greetingText: "Protocol d'enllaç actiu, Mireia Valls. Sóc Kenz Core, el nucli tecnològic hologràfic i motor analític de BancActiu Nexus 2.0. Puc executar diagnòstics de seguretat, monitorar concurrència de serveis o reproduir la memòria tècnica."
+  }
+};
+
+function AssistantIcon({ type, size = 18 }: { type: 'masculine' | 'feminine' | 'cyber'; size?: number }) {
+  if (type === 'masculine') {
+    return <Bot size={size} className="text-cyan-200" />;
+  }
+  if (type === 'feminine') {
+    return <Sparkles size={size} className="text-rose-200" />;
+  }
+  return <Cpu size={size} className="text-emerald-200" />;
+}
 
 interface Slide {
   id: number;
@@ -47,18 +130,55 @@ export function KenzoAssistant() {
   const [activeTab, setActiveTab] = useState<'audit' | 'metrics' | 'slides' | 'chat'>('audit');
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // Perfil d'aparença seleccionable per l'usuari (Kenzo, Kenza, Kenz Core)
+  const [appearance, setAppearance] = useState<AppearanceProfile>('kenzo');
+
+  // Recuperar la preferència des de localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bancactiu_kenzo_appearance') as AppearanceProfile;
+      if (saved && (saved === 'kenzo' || saved === 'kenza' || saved === 'core')) {
+        setAppearance(saved);
+      }
+    } catch {
+      // Ignorar errors en entorns SSR
+    }
+  }, []);
+
+  const currentProfile = PROFILES[appearance];
+
+  // Gestor del canvi d'aparença interactiva
+  const handleSelectAppearance = (newProfile: AppearanceProfile) => {
+    setAppearance(newProfile);
+    try {
+      localStorage.setItem('bancactiu_kenzo_appearance', newProfile);
+    } catch {
+      // Ignorar
+    }
+
+    const target = PROFILES[newProfile];
+    setMessages(prev => [
+      ...prev,
+      {
+        sender: 'kenzo',
+        text: `Aparença actualitzada a ${target.name} (${target.role}). Interfície visual, paleta cromàtica i identificadors adaptats per a la sessió del Superadministrador (52622304Y).`,
+        time: 'Ara'
+      }
+    ]);
+  };
+
   // Estat del mode Slides
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   // Estat de mètriques per mòdul
   const [selectedModule, setSelectedModule] = useState<'salut' | 'municipal' | 'social' | 'operatiu'>('salut');
 
-  // Xat amb Kenzo
+  // Xat amb Kenzo / Kenza / Kenz Core
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'kenzo'; text: string; time: string }>>([
     {
       sender: 'kenzo',
-      text: 'Hola, Mireia Valls. Sóc en Kenzo, l\'assistent d\'intel·ligència artificial i ciberseguretat de BancActiu Nexus 2.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives.',
+      text: PROFILES.kenzo.greetingText,
       time: 'Ara'
     }
   ]);
@@ -72,13 +192,15 @@ export function KenzoAssistant() {
     setMessages(prev => [...prev, newMsg]);
     setChatInput('');
 
-    // Resposta contextualitzada de Kenzo
+    // Resposta contextualitzada de l'assistent segons perfil
     setTimeout(() => {
-      let reply = 'He registrat la vostra consulta al registre d\'auditoria del Superadministrador (DNI 52622304Y).';
+      let reply = `He registrat la vostra consulta al registre d'auditoria del Superadministrador (DNI 52622304Y) via ${currentProfile.name}.`;
       const lower = userText.toLowerCase();
 
-      if (lower.includes('auditoria') || lower.includes('seguretat') || lower.includes('vulnerabilitat')) {
-        reply = 'Auditoria completada: Perímetre protegit amb Zero-Trust. L\'únic compte arrel acreditat és el DNI 52622304Y. Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.';
+      if (lower.includes('aparença') || lower.includes('perfil') || lower.includes('kenza') || lower.includes('kenzo') || lower.includes('core')) {
+        reply = `Podeu canviar d'aparença en qualsevol moment utilitzant el selector superior: Kenzo (Masculí/Executiu), Kenza (Femenina/Executiva) o Kenz Core (Hologràfic/Tecnològic). La vostra preferència es manté guardada.`;
+      } else if (lower.includes('auditoria') || lower.includes('seguretat') || lower.includes('vulnerabilitat')) {
+        reply = `Auditoria completada (${currentProfile.name}): Perímetre protegit amb Zero-Trust. L'únic compte arrel acreditat és el DNI 52622304Y. Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.`;
       } else if (lower.includes('metrica') || lower.includes('salut') || lower.includes('dades')) {
         reply = 'Mètriques actuals: 2.150 ajudes tècniques en circulació, taxa de reutilització comunitària del 94.2% i temps de resposta d\'interoperabilitat de 16.4ms.';
       } else if (lower.includes('slide') || lower.includes('presentacio') || lower.includes('diapositiva')) {
@@ -263,19 +385,21 @@ export function KenzoAssistant() {
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={() => setIsOpen(true)}
-            className="group flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-cyan-600/90 backdrop-blur-xl border border-white/25 shadow-2xl shadow-indigo-500/40 hover:scale-105 active:scale-95 transition-all text-white"
+            className={`group flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r ${currentProfile.triggerGradient} backdrop-blur-xl border border-white/25 shadow-2xl ${currentProfile.triggerShadow} hover:scale-105 active:scale-95 transition-all text-white`}
           >
             <div className="relative">
-              <Bot className="w-5 h-5 text-cyan-200" />
+              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <AssistantIcon type={currentProfile.iconType} size={18} />
+              </div>
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
             </div>
             <div className="text-left">
               <div className="text-xs font-black tracking-tight text-white flex items-center gap-1.5">
-                Kenzo AI <Sparkles size={11} className="text-cyan-300" />
+                {currentProfile.name} AI <Sparkles size={11} className={currentProfile.triggerTextGlow} />
               </div>
-              <div className="text-[10px] text-cyan-200/90 font-medium">
-                Assistent SuperAdmin
+              <div className="text-[10px] text-white/80 font-medium">
+                {currentProfile.role}
               </div>
             </div>
           </button>
@@ -288,27 +412,27 @@ export function KenzoAssistant() {
           className={`fixed z-50 transition-all duration-300 ${
             isFullScreen
               ? 'inset-4 md:inset-8'
-              : 'bottom-6 right-6 w-[94vw] sm:w-[480px] max-h-[85vh]'
+              : 'bottom-6 right-6 w-[94vw] sm:w-[500px] max-h-[88vh]'
           }`}
         >
           <GlassCard
             variant="glow"
-            glowColor="purple"
+            glowColor={currentProfile.glowColor}
             className="w-full h-full flex flex-col backdrop-blur-3xl shadow-2xl border-white/20 p-4 sm:p-5"
           >
-            {/* Capçalera de Kenzo */}
+            {/* Capçalera de l'assistent */}
             <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-                  <Bot size={18} />
+                <div className={`w-9 h-9 rounded-xl ${currentProfile.avatarBg} flex items-center justify-center text-white shadow-md`}>
+                  <AssistantIcon type={currentProfile.iconType} size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-black text-white">Kenzo Assistant</h3>
-                    <GlassBadge variant="emerald" pulse>Online</GlassBadge>
+                    <h3 className="text-sm font-black text-white">{currentProfile.name} Assistant</h3>
+                    <GlassBadge variant={appearance === 'kenza' ? 'purple' : appearance === 'core' ? 'emerald' : 'blue'} pulse>Online</GlassBadge>
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    SuperAdmin &middot; DNI: <span className="text-cyan-300 font-mono">52622304Y</span>
+                    {currentProfile.role} &middot; DNI: <span className="text-cyan-300 font-mono">52622304Y</span>
                   </p>
                 </div>
               </div>
@@ -331,8 +455,54 @@ export function KenzoAssistant() {
               </div>
             </div>
 
+            {/* Selector d'Aparència Interactiu (Kenzo, Kenza, Kenz Core) */}
+            <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 rounded-xl border border-white/10 shrink-0 my-2">
+              <div className="flex items-center gap-1.5 text-slate-300 font-semibold text-[11px]">
+                <Palette size={13} className={currentProfile.accentText} />
+                <span>Aparença:</span>
+              </div>
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/40 border border-white/5">
+                <button
+                  onClick={() => handleSelectAppearance('kenzo')}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
+                    appearance === 'kenzo'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Kenzo: Aparença masculina / Executiu"
+                >
+                  <Bot size={11} className={appearance === 'kenzo' ? 'text-cyan-200' : ''} />
+                  Kenzo
+                </button>
+                <button
+                  onClick={() => handleSelectAppearance('kenza')}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
+                    appearance === 'kenza'
+                      ? 'bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Kenza: Aparença femenina / Executiva"
+                >
+                  <Sparkles size={11} className={appearance === 'kenza' ? 'text-rose-200' : ''} />
+                  Kenza
+                </button>
+                <button
+                  onClick={() => handleSelectAppearance('core')}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
+                    appearance === 'core'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Kenz Core: Aparença neutra / Hologràfica tecnològica"
+                >
+                  <Cpu size={11} className={appearance === 'core' ? 'text-emerald-200' : ''} />
+                  Kenz Core
+                </button>
+              </div>
+            </div>
+
             {/* Pestañes de Funcionalitat */}
-            <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-xl border border-white/10 my-3 shrink-0">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-xl border border-white/10 mb-3 shrink-0">
               <button
                 onClick={() => setActiveTab('audit')}
                 className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
@@ -617,7 +787,7 @@ export function KenzoAssistant() {
                 </div>
               )}
 
-              {/* PESTANYA 4: XAT INTEL·LIGENT AMB KENZO */}
+              {/* PESTANYA 4: XAT INTEL·LIGENT AMB KENZO / KENZA / KENZ CORE */}
               {activeTab === 'chat' && (
                 <div className="space-y-3 flex flex-col h-[280px]">
                   <div className="flex-1 overflow-y-auto space-y-2 p-2 bg-slate-950/50 rounded-xl border border-white/10 text-xs">
@@ -630,8 +800,8 @@ export function KenzoAssistant() {
                             : 'mr-auto bg-slate-900/80 border border-white/10 text-slate-200'
                         }`}
                       >
-                        <div className="text-[10px] text-cyan-300 font-bold mb-0.5">
-                          {m.sender === 'user' ? 'Superadmin (52622304Y)' : 'Kenzo AI'}
+                        <div className={`text-[10px] ${m.sender === 'user' ? 'text-cyan-300' : currentProfile.accentText} font-bold mb-0.5`}>
+                          {m.sender === 'user' ? 'Superadmin (52622304Y)' : `${currentProfile.name} AI`}
                         </div>
                         {m.text}
                       </div>
@@ -671,7 +841,7 @@ export function KenzoAssistant() {
                       type="text"
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Pregunta a Kenzo sobre el sistema..."
+                      placeholder={`Pregunta a ${currentProfile.name} sobre el sistema...`}
                       className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white text-xs focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
                     />
                     <GlassButton type="submit" variant="primary" size="sm" icon={<Send size={13} />}>
@@ -684,7 +854,7 @@ export function KenzoAssistant() {
 
             {/* Peu de la targeta */}
             <div className="pt-2.5 mt-2 border-t border-white/10 flex justify-between items-center text-[10px] text-slate-400 shrink-0">
-              <span>Kenzo Assistant v2.0 &middot; BancActiu AI</span>
+              <span>{currentProfile.name} Assistant v2.0 &middot; BancActiu AI</span>
               <span className="font-mono text-cyan-300">Generalitat de Catalunya</span>
             </div>
           </GlassCard>
