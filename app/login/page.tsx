@@ -159,8 +159,8 @@ function LoginForm() {
           </h2>
           <p className="text-xs text-slate-300 mt-1">
             {isFirstTimeSetup
-              ? 'Definiu la contrasenya personal per al Superadministrador (DNI 52622304Y)'
-              : 'Accés exclusiu per al Superadministrador institucional (DNI 52622304Y)'}
+              ? 'Definiu la contrasenya personal per al compte d\'administració'
+              : 'Accés autenticat per a personal acreditat i governança perimetral'}
           </p>
         </div>
 
@@ -379,7 +379,7 @@ function LoginForm() {
                     S'ha detectat la presència de dispositius de signatura electrònica vàlids (idCAT, T-CAT corporatiu de Salut, DNI Electrònic o Cl@ve).
                   </p>
                   <div className="pt-2 border-t border-cyan-500/20 text-[10px] text-cyan-200 font-mono">
-                    Titular certificat: Mireia Valls i Grau &middot; DNI: 52622304Y
+                    Certificat digital d'empleat públic (T-CAT) o ciutadà acreditat (idCAT / DNIe)
                   </div>
                 </div>
 
@@ -391,7 +391,7 @@ function LoginForm() {
                   className="w-full justify-center py-2.5"
                   icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
                 >
-                  {isLoading ? 'Autenticant via idCAT...' : 'Validar Certificat Digital (52622304Y)'}
+                  {isLoading ? 'Autenticant via Certificat...' : 'Validar Certificat Digital'}
                 </GlassButton>
               </div>
             )}
@@ -401,17 +401,55 @@ function LoginForm() {
 
       {/* Avís Legal de Seguretat */}
       <div className="mt-4 p-3 rounded-xl bg-slate-900/50 border border-white/5 backdrop-blur-md text-[10px] text-slate-400 text-center">
-        Sistema subjecte a registre d'auditoria continu (Llei 39/2015 i RGPD). Qualsevol accés no autoritzat serà notificat al Centre de Seguretat de la Informació de Catalunya (CESICAT).
+        Sistema protegit per arquitectura Zero-Trust i registre d'auditoria continu (Llei 39/2015 i RGPD). Qualsevol accés no autoritzat serà bloquejat i auditat pel sistema perimetral.
       </div>
     </div>
   );
 }
 
+function useTenantContext() {
+  const [tenant, setTenant] = useState<{
+    id: string;
+    name: string;
+    shortName: string;
+    description: string;
+    badgeLabel: string;
+    badgeVariant: 'purple' | 'blue' | 'emerald' | 'amber' | 'rose';
+    isDefault?: boolean;
+    clientIp?: string;
+  }>({
+    id: 'tenant-default',
+    name: 'BancActiu 2.0 Enterprise',
+    shortName: 'BancActiu 2.0',
+    description: 'Plataforma Unificada de Governança i Serveis Sociosanitaris',
+    badgeLabel: 'Plataforma Institucional',
+    badgeVariant: 'purple',
+    isDefault: true,
+  });
+
+  React.useEffect(() => {
+    try {
+      const match = typeof document !== 'undefined' ? document.cookie.split('; ').find(r => r.startsWith('bancactiu_tenant=')) : null;
+      if (match) {
+        const val = decodeURIComponent(match.split('=')[1]);
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.id) setTenant(parsed);
+      }
+    } catch {
+      // Ignorar fallback
+    }
+  }, []);
+
+  return tenant;
+}
+
 export default function BancActiuLoginPage() {
+  const tenant = useTenantContext();
+
   return (
     <RadialAuraBackground variant="nexus">
       <div className="min-h-screen w-full flex flex-col justify-between p-4 sm:p-6 lg:p-8">
-        {/* Capçalera d'accés institucional */}
+        {/* Capçalera d'accés institucional dinàmica */}
         <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-white/20">
@@ -422,12 +460,14 @@ export default function BancActiuLoginPage() {
                 <h1 className="text-lg font-black text-white tracking-tight">
                   BancActiu <span className="text-cyan-400">2.0</span>
                 </h1>
-                <GlassBadge variant="purple" pulse>
-                  Porta d'Accés Segura
+                <GlassBadge variant={tenant.badgeVariant || 'purple'} pulse>
+                  {tenant.isDefault ? "Porta d'Accés Segura" : tenant.badgeLabel}
                 </GlassBadge>
               </div>
               <p className="text-xs text-slate-400">
-                Generalitat de Catalunya &middot; Ajuntament de Cornellà &middot; GAPIC
+                {tenant.isDefault
+                  ? "Plataforma de Governança i Serveis Sociosanitaris"
+                  : `${tenant.name} · Accés Autoritzat`}
               </p>
             </div>
           </div>
@@ -436,9 +476,14 @@ export default function BancActiuLoginPage() {
             <GlassBadge variant="emerald">
               ENS Nivell Alt
             </GlassBadge>
-            <GlassBadge variant="blue">
-              DNI 52622304Y
+            <GlassBadge variant="purple">
+              Zero-Trust
             </GlassBadge>
+            {tenant.clientIp && tenant.clientIp !== '127.0.0.1' && (
+              <span className="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                IP: {tenant.clientIp}
+              </span>
+            )}
           </div>
         </header>
 
@@ -454,9 +499,9 @@ export default function BancActiuLoginPage() {
           </Suspense>
         </main>
 
-        {/* Peu de pàgina */}
+        {/* Peu de pàgina neutre */}
         <footer className="text-center text-xs text-slate-500 pt-4 border-t border-white/10">
-          BancActiu Nexus 2.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; Generalitat de Catalunya
+          BancActiu Nexus 2.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; {tenant.isDefault ? "Arquitectura Distribuïda" : tenant.shortName}
         </footer>
       </div>
     </RadialAuraBackground>

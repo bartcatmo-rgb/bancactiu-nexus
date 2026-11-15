@@ -1,10 +1,51 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { resolveTenant } from './lib/tenant';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Rutes permeses sense autenticació (públiques, auth endpoints, recursos estàtics)
+  // 1. Resolució Dinàmica de Multi-Tenant contextual basada en IP d'accés i Host
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || '127.0.0.1');
+  const requestHost = request.headers.get('host') || request.nextUrl.host || '';
+  const tenantParam = request.nextUrl.searchParams.get('tenant');
+
+  const tenant = resolveTenant(clientIp, requestHost, tenantParam);
+
+  const tenantCookieValue = encodeURIComponent(
+    JSON.stringify({
+      id: tenant.id,
+      code: tenant.code,
+      name: tenant.name,
+      shortName: tenant.shortName,
+      description: tenant.description,
+      badgeLabel: tenant.badgeLabel,
+      badgeVariant: tenant.badgeVariant,
+      themeColor: tenant.themeColor,
+      allowedModules: tenant.allowedModules,
+      isDefault: tenant.isDefault,
+      clientIp
+    })
+  );
+
+  const applyTenantHeaders = (res: NextResponse) => {
+    res.headers.set('x-tenant-id', tenant.id);
+    res.headers.set('x-tenant-code', tenant.code);
+    res.headers.set('x-tenant-name', tenant.name);
+    res.headers.set('x-tenant-badge', tenant.badgeLabel);
+    res.headers.set('x-client-ip', clientIp);
+    res.cookies.set('bancactiu_tenant', tenantCookieValue, {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24
+    });
+    return res;
+  };
+
+  // 2. Rutes permeses sense autenticació (públiques, auth endpoints, recursos estàtics)
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
@@ -13,12 +54,12 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/docs') ||
     pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|woff2?|map|pdf)$/)
   ) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return applyTenantHeaders(response);
   }
 
-  // 2. Comprovació de la sessió criptogràfica o de control d'accés
+  // 3. Comprovació de la sessió criptogràfica Zero-Trust
   const sessionCookie = request.cookies.get('bancactiu_session')?.value;
-
   let isValidSession = false;
 
   if (sessionCookie) {
@@ -29,18 +70,16 @@ export function middleware(request: NextRequest) {
         isValidSession = true;
       }
     } catch {
-      // Validació alternativa si el token és opac o string directe
       if (sessionCookie.length >= 16) {
         isValidSession = true;
       }
     }
   }
 
-  // 3. Bloqueig d'accés no autoritzat
+  // 4. Bloqueig d'accés no autoritzat
   if (!isValidSession) {
-    // Si és una crida a l'API interna, retornar 401 Unauthorized
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
+      const unauthorizedRes = NextResponse.json(
         {
           error: 'Accés no autoritzat',
           message: 'Sessió de SuperAdmin requerida per accedir als serveis de BancActiu Nexus.',
@@ -48,6 +87,7 @@ export function middleware(request: NextRequest) {
         },
         { status: 401 }
       );
+      return applyTenantHeaders(unauthorizedRes);
     }
 
     // Redirigir a /login guardant el paràmetre de retorn
@@ -55,15 +95,18 @@ export function middleware(request: NextRequest) {
     if (pathname !== '/' && pathname !== '') {
       loginUrl.searchParams.set('redirect', pathname);
     }
-    return NextResponse.redirect(loginUrl);
+    const redirectRes = NextResponse.redirect(loginUrl);
+    return applyTenantHeaders(redirectRes);
   }
 
-  // 4. Si ja té sessió vàlida i intenta anar a /login, redirigir al panell
+  // 5. Si ja té sessió vàlida i intenta anar a /login, redirigir al panell
   if (pathname === '/login' && isValidSession) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const homeRes = NextResponse.redirect(new URL('/', request.url));
+    return applyTenantHeaders(homeRes);
   }
 
-  return NextResponse.next();
+  const defaultRes = NextResponse.next();
+  return applyTenantHeaders(defaultRes);
 }
 
 export const config = {

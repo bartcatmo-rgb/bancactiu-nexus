@@ -60,6 +60,45 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const [activeRole, setActiveRole] = useState(initialUser?.role || 'SUPERADMIN');
 
+  // Context dinàmic de Tenant (IP & Host resolution)
+  const [tenantContext, setTenantContext] = useState<{
+    id: string;
+    code: string;
+    name: string;
+    shortName: string;
+    description: string;
+    badgeLabel: string;
+    badgeVariant: 'purple' | 'blue' | 'emerald' | 'amber' | 'rose';
+    themeColor: string;
+    allowedModules: string[];
+    isDefault?: boolean;
+    clientIp?: string;
+  }>({
+    id: 'tenant-default',
+    code: 'BANCACTIU_ENTERPRISE',
+    name: 'BancActiu 2.0 Enterprise',
+    shortName: 'BancActiu 2.0',
+    description: 'Plataforma Unificada de Governança i Serveis Sociosanitaris',
+    badgeLabel: 'Plataforma Institucional',
+    badgeVariant: 'purple',
+    themeColor: '#9333ea',
+    allowedModules: ['bancactiu-nexus', 'bancactiu-salut', 'bancactiu-municipal', 'bancactiu-social', 'bancactiu-operatiu'],
+    isDefault: true,
+  });
+
+  React.useEffect(() => {
+    try {
+      const match = typeof document !== 'undefined' ? document.cookie.split('; ').find(r => r.startsWith('bancactiu_tenant=')) : null;
+      if (match) {
+        const val = decodeURIComponent(match.split('=')[1]);
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.id) setTenantContext(parsed);
+      }
+    } catch {
+      // Fallback a neutre
+    }
+  }, []);
+
   // Re-autenticació sensible per a rols d'alt nivell (Superadmin, Gerència, Direcció)
   const [authModalConfig, setAuthModalConfig] = useState<{
     isOpen: boolean;
@@ -169,7 +208,10 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 </div>
                 <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{initialUser?.name || "Mireia Valls"} · Governança i Control Total Catalunya</span>
+                  <span>{initialUser?.name || "Superadministrador"} · Governança i Control Central</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                    Tenant: {tenantContext.shortName}
+                  </span>
                 </p>
               </div>
             </div>
@@ -294,10 +336,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         {/* Capçalera institucional Glassmorphism amb acció de Tancar Sessió */}
         <GlassHeader
           appName="BancActiu Nexus (Consola SuperAdmin)"
-          badgeText="SuperAdmin · Màxima Seguretat"
-          badgeVariant="purple"
-          userNom={initialUser?.name || "Mireia Valls (SuperAdmin GAPIC)"}
-          userRol={initialUser?.roleLabel || "Nivell 5 · Control Total Catalunya"}
+          badgeText={tenantContext.isDefault ? "SuperAdmin · Màxima Seguretat" : tenantContext.badgeLabel}
+          badgeVariant={tenantContext.badgeVariant || "purple"}
+          userNom={initialUser?.name || "SuperAdmin"}
+          userRol={initialUser?.roleLabel || "Nivell 5 · Control Total"}
+          tenantSubtext={tenantContext.name || "Plataforma de Governança i Serveis"}
           onOpenLauncher={() => setIsLauncherOpen(true)}
           onLogout={handleLogout}
         />
@@ -318,7 +361,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </div>
                   <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
                     Benvingut al nucli de governança institucional. Des d'aquest espai tens accés a l'auditoria forense,
-                    a l'alta descentralitzada de centres sanitaris, a la simulació de càrrega massiva (1-3 anys a escala Catalunya)
+                    a l'alta descentralitzada de centres i serveis, a la simulació de concurrència d'alta escala (fins a 250.000 usuaris)
                     i a la consola de l'Enginyer Agent IA autònom.
                   </p>
                 </div>
@@ -585,9 +628,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           />
         </GlassModal>
 
-        {/* Peu de pàgina institucional */}
+        {/* Peu de pàgina institucional neutre i dinàmic */}
         <footer className="mt-6 pt-3 border-t border-white/10 text-center text-xs text-slate-500">
-          BancActiu Nexus 2.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; Generalitat de Catalunya i Ajuntament de Cornellà
+          BancActiu Nexus 2.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; {tenantContext.isDefault ? "Arquitectura Distribuïda i Zero-Trust" : tenantContext.name}
         </footer>
         {/* Assistent Flotant Kenzo AI */}
         <KenzoAssistant />

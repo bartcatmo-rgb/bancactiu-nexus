@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "BancActiu Nexus - BancActiu 2.0",
-  description: "Ecosistema Modular BancActiu 2.0 - Generalitat de Catalunya i Ajuntament de Cornellà",
+  description: "BancActiu 2.0 - Plataforma Unificada de Governança i Serveis Sociosanitaris (Zero-Trust & ENS Nivell Alt)",
 };
 
 export default function RootLayout({

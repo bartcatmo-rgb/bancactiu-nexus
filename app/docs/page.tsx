@@ -119,6 +119,25 @@ const documents = [
       'Descripció visual pla a pla (Motion Graphics)',
       'Bilingüe: Versió en Català i Castellà'
     ]
+  },
+  {
+    id: 'multi-tenant',
+    title: 'Manual de Multi-Tenant Dinàmic i White-Labeling',
+    badge: 'Context IP & Host · Edge',
+    badgeVariant: 'blue' as const,
+    icon: <Sparkles className="w-7 h-7 text-cyan-400" />,
+    gradient: 'from-blue-600/30 to-indigo-600/30',
+    border: 'border-blue-500/30',
+    desc: 'Arquitectura d’adaptació automàtica de marca i context per IP corporativa i subdomini HTTP, eliminació de hardcoding institucional i compliment Zero-Trust d’auditoria.',
+    pdfUrl: '/docs/MANUAL_MULTI_TENANT_IP_CONTEXT_2.0.pdf',
+    size: '180 KB',
+    version: 'v2.0-PROD',
+    highlights: [
+      'Detecció automàtica de rangs CIDR a Edge Middleware',
+      'White-Labeling contextual sense referències hardcoded',
+      'Cookie segura bancactiu_tenant i capçaleres x-tenant-*',
+      'Compatibilitat amb sandbox de seguretat i paràmetre ?tenant='
+    ]
   }
 ];
 
