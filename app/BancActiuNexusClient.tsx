@@ -17,7 +17,9 @@ import {
   Grid,
   CheckCircle2,
   Globe,
-  FileText
+  FileText,
+  Share2,
+  Boxes
 } from 'lucide-react';
 import {
   RadialAuraBackground,
@@ -53,6 +55,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const [activeRole, setActiveRole] = useState(initialUser?.role || 'SUPERADMIN');
 
+  const isSuperAdmin52622304Y = initialUser?.dni === '52622304Y' || (initialUser?.role === 'SUPERADMIN' && (!initialUser?.dni || initialUser.dni === '52622304Y'));
+
+  const handleNavigateModule = (appId: string, defaultPort: number) => {
+    const targetUrl = resolveAppTargetUrl(appId, defaultPort);
+    window.location.href = targetUrl;
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -74,7 +83,105 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   };
 
   return (
-    <RadialAuraBackground variant="nexus">
+    <RadialAuraBackground variant="nexus" className="min-h-screen w-full flex flex-col overflow-y-auto">
+      {/* 1. Barra Superior Exclusiva de Superadministrador (DNI 52622304Y) */}
+      {isSuperAdmin52622304Y && (
+        <aside
+          aria-label="Barra de Control SuperAdministrador"
+          className="sticky top-0 z-50 w-full border-b border-purple-500/30 bg-slate-950/85 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            {/* Esquerra: Identitat SuperAdmin DNI 52622304Y */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-lg border border-white/20">
+                <Shield className="w-4 h-4 text-purple-200" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black tracking-tight text-white uppercase">
+                    Consola Exclusiva SuperAdmin
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    DNI: 52622304Y
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{initialUser?.name || "Mireia Valls"} · Governança i Control Total Catalunya</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Centre: Accions Ràpides Exclusives */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Botó 1: Gestió d'Usuaris i Rols */}
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services')}
+                title="Assignar perfils a administratius i entitats veïnals"
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'roles-services'
+                    ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
+                    : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
+                }`}
+              >
+                <Users size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                <span>Gestió d'Usuaris i Rols</span>
+              </button>
+
+              {/* Botó 2: Auditoria Zero-Trust */}
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace(activeWorkspace === 'security-lab' ? null : 'security-lab')}
+                title="Estat de ciberseguretat militar i escàner de vulnerabilitats ENS"
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'security-lab'
+                    ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/20'
+                    : 'bg-slate-900/80 hover:bg-cyan-900/30 border-white/10 hover:border-cyan-400/40'
+                }`}
+              >
+                <Lock size={14} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span>Auditoria Zero-Trust</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">ENS Alt</span>
+              </button>
+
+              {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
+              <div className="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => handleNavigateModule('bancactiu-social', 3003)}
+                  title="Enllaç directe al mòdul Social (Banc del Temps i Xarxa Ciutadana)"
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-200 hover:text-white hover:bg-rose-600/30 transition-all flex items-center gap-1"
+                >
+                  <Share2 size={13} className="text-rose-400" />
+                  <span>Xarxa Social</span>
+                </button>
+                <span className="text-white/20">|</span>
+                <button
+                  type="button"
+                  onClick={() => handleNavigateModule('bancactiu-operatiu', 3004)}
+                  title="Enllaç directe al mòdul Operatiu (Logística de Préstecs i Ortopèdia)"
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-200 hover:text-white hover:bg-blue-600/30 transition-all flex items-center gap-1"
+                >
+                  <Boxes size={13} className="text-blue-400" />
+                  <span>Gestió de Préstecs</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dreta: Accés ràpid Manuals i Estat */}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/docs"
+                className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-cyan-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-1.5"
+              >
+                <FileText size={13} className="text-cyan-400" />
+                <span>Manuals & PDFs</span>
+              </Link>
+            </div>
+          </div>
+        </aside>
+      )}
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 flex flex-col justify-between">
         {/* Capçalera institucional Glassmorphism amb acció de Tancar Sessió */}
         <GlassHeader
