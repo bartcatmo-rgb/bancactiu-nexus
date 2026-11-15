@@ -133,12 +133,18 @@ export function KenzoAssistant() {
   // Perfil d'aparença seleccionable per l'usuari (Kenzo, Kenza, Kenz Core)
   const [appearance, setAppearance] = useState<AppearanceProfile>('kenzo');
 
-  // Recuperar la preferència des de localStorage
+  // Recuperar la preferència des de localStorage vinculada al Superadmin (DNI 52622304Y)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('bancactiu_kenzo_appearance') as AppearanceProfile;
       if (saved && (saved === 'kenzo' || saved === 'kenza' || saved === 'core')) {
         setAppearance(saved);
+        setMessages(prev => {
+          if (prev.length === 1 && prev[0].sender === 'kenzo') {
+            return [{ sender: 'kenzo', text: PROFILES[saved].greetingText, time: 'Ara' }];
+          }
+          return prev;
+        });
       }
     } catch {
       // Ignorar errors en entorns SSR
