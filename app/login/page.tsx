@@ -31,7 +31,8 @@ import {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect');
+  const redirectPath = rawRedirect && rawRedirect !== '/login' && !rawRedirect.startsWith('/login') ? rawRedirect : '/';
 
   // Mode d'autenticació: credentials / certificate
   const [authMode, setAuthMode] = useState<'credentials' | 'certificate'>('credentials');
@@ -111,9 +112,8 @@ function LoginForm() {
           return;
         }
 
-        // Accés completat, redirigir al Gateway Launcher
-        router.push(redirectPath);
-        router.refresh();
+        // Accés completat, navegació imperativa al Gateway Launcher (elimina bucles de cache de Next.js)
+        window.location.href = redirectPath;
       } else {
         setErrorMsg(data.error || 'Credencials no vàlides. Verifiqueu les dades.');
       }
@@ -150,9 +150,8 @@ function LoginForm() {
       if (res.ok && data.success) {
         setSuccessMsg('Contrasenya configurada amb èxit. Accedint al sistema...');
         setTimeout(() => {
-          router.push(redirectPath);
-          router.refresh();
-        }, 1200);
+          window.location.href = redirectPath;
+        }, 800);
       } else {
         setErrorMsg(data.error || 'No s\'ha pogut establir la contrasenya.');
       }

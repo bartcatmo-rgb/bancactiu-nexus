@@ -99,9 +99,9 @@ export function middleware(request: NextRequest) {
       return applyTenantHeaders(unauthorizedRes);
     }
 
-    // Redirigir a /login guardant el paràmetre de retorn
+    // Redirigir a /login guardant el paràmetre de retorn (mai no redirigir cap a /login mateix)
     const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/' && pathname !== '') {
+    if (pathname !== '/' && pathname !== '' && pathname !== '/login' && !pathname.startsWith('/login')) {
       loginUrl.searchParams.set('redirect', pathname);
     }
     const redirectRes = NextResponse.redirect(loginUrl);

@@ -181,7 +181,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" className="space-y-4">
           {/* Secció 1: Dades del Beneficiari */}
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <h3 className="text-xs font-bold text-cyan-700 uppercase tracking-wider flex items-center gap-1.5">
