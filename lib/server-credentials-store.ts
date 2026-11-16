@@ -6,13 +6,31 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import type { SystemUser } from '@/lib/auth-security';
 import { INITIAL_SYSTEM_USERS, validatePasswordSecurity } from '@/lib/auth-security';
 import { hashPassword, verifyPassword } from '@/lib/crypto-security';
 
-// Ruta al fitxer de dades privat al servidor (fora de /public per seguretat RGPD)
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'db_credentials_users.json');
+// Determina el fitxer de dades privat al servidor amb fallback a /tmp en entorns serverless (Vercel)
+function getDbFilePath(): string {
+  const primaryDir = path.join(process.cwd(), 'data');
+  const primaryFile = path.join(primaryDir, 'db_credentials_users.json');
+  try {
+    if (!fs.existsSync(primaryDir)) {
+      fs.mkdirSync(primaryDir, { recursive: true });
+    }
+    const testFile = path.join(primaryDir, '.write_test');
+    fs.writeFileSync(testFile, 'ok');
+    fs.unlinkSync(testFile);
+    return primaryFile;
+  } catch {
+    const tmpDir = path.join(os.tmpdir(), 'bancactiu_data');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    return path.join(tmpDir, 'db_credentials_users.json');
+  }
+}
 
 /**
  * Retorna un objecte d'usuari sanititzat (sense contrasenya ni historial de hashes en text pla)
@@ -27,11 +45,14 @@ export function sanitizeUser(user: SystemUser): Omit<SystemUser, 'currentPasswor
  */
 export function getServerUsers(): SystemUser[] {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dbFile = getDbFilePath();
+    const dataDir = path.dirname(dbFile);
+
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    if (!fs.existsSync(DB_FILE)) {
+    if (!fs.existsSync(dbFile)) {
       // Inicialitza amb hashes segurs
       const seeded = INITIAL_SYSTEM_USERS.map((u) => ({
         ...u,
@@ -39,11 +60,11 @@ export function getServerUsers(): SystemUser[] {
           ? u.currentPassword
           : hashPassword(u.currentPassword),
       }));
-      fs.writeFileSync(DB_FILE, JSON.stringify(seeded, null, 2), 'utf-8');
+      fs.writeFileSync(dbFile, JSON.stringify(seeded, null, 2), 'utf-8');
       return seeded;
     }
 
-    const content = fs.readFileSync(DB_FILE, 'utf-8');
+    const content = fs.readFileSync(dbFile, 'utf-8');
     const parsed = JSON.parse(content) as SystemUser[];
 
     // Assegurar que el superadministrador 52622304Y estigui sempre inicialitzat
@@ -94,12 +115,52 @@ export function getServerUsers(): SystemUser[] {
  */
 export function saveServerUsers(users: SystemUser[]): void {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dbFile = getDbFilePath();
+    const dataDir = path.dirname(dbFile);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
+    fs.writeFileSync(dbFile, JSON.stringify(users, null, 2), 'utf-8');
   } catch (error) {
     console.error('[ServerCredentialsStore] Error desant db_credentials_users.json:', error);
+  }
+}
+
+/**
+ * Desa directament la nova contrasenya d'un usuari regularitzat (primer inici)
+ */
+export function saveUserPasswordDirect(
+  identifier: string,
+  newHash: string,
+  history: string[]
+): boolean {
+  try {
+    const users = getServerUsers();
+    const cleanId = identifier.trim().toUpperCase();
+    const userIdx = users.findIndex(
+      (u) =>
+        u.dni.toUpperCase() === cleanId ||
+        u.username.toUpperCase() === cleanId ||
+        u.email.toUpperCase() === cleanId ||
+        (cleanId === 'ADMINISTRADOR' && (u.username.toUpperCase().includes('ADMIN') || u.id.toLowerCase().includes('admin')))
+    );
+    if (userIdx !== -1) {
+      users[userIdx] = {
+        ...users[userIdx],
+        currentPassword: newHash,
+        mustChangePassword: false,
+        passwordHistory: history.slice(0, 10),
+        lastPasswordChangeDate: new Date().toISOString(),
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      };
+      saveServerUsers(users);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('[ServerCredentialsStore] Error a saveUserPasswordDirect:', err);
+    return false;
   }
 }
 

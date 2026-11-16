@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { appendAuditBlock } from '@/lib/audit-merkle-chain';
+import { verifyPassword } from '@/lib/crypto-security';
+import { getServerUsers } from '@/lib/server-credentials-store';
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +22,9 @@ export async function POST(request: Request) {
         certificateIssuer: 'EC-ACC (Agència Catalana de Certificació)',
         authenticated: true,
         authMethod: 'idCAT Certificat Digital (DNI 48956602Z)',
+        passwordConfigured: true,
+        mustChangePassword: false,
+        isFirstLogin: false,
         loginTime: new Date().toISOString(),
       };
 
@@ -72,10 +77,10 @@ export async function POST(request: Request) {
       lookupTarget = '48956602Z';
     }
 
-    // Verificar credencials a la base de dades
-    const verification = await sharedDb.verifyUserPassword(lookupTarget, password || '');
+    // Buscar l'usuari a la base de dades
+    const userRecord = await sharedDb.getUserByDni(lookupTarget);
 
-    if (!verification.user) {
+    if (!userRecord) {
       return NextResponse.json(
         {
           success: false,
@@ -85,29 +90,83 @@ export async function POST(request: Request) {
       );
     }
 
-    const userRecord = verification.user;
-
-    // Primer accés obligatori per canviar contrasenya (p.ex. usuari Administrador amb clau 1234)
-    if (verification.mustChangePassword) {
-      return NextResponse.json({
-        success: true,
-        requirePasswordSetup: true,
-        dni: userRecord.dni,
-        userId: userRecord.id,
-        name: userRecord.nomComplet,
-        message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
-      });
+    // Sincronitzar amb el magatzem segur persistent del servidor per evitar pèrdua d'estat en serverless cold-starts
+    try {
+      const serverUsers = getServerUsers();
+      const sUser = serverUsers.find(
+        (u) =>
+          u.dni.toUpperCase() === userRecord.dni.toUpperCase() ||
+          u.username.toUpperCase() === userRecord.dni.toUpperCase() ||
+          (userRecord.id === 'Administrador' && (u.username.toUpperCase().includes('ADMIN') || u.id.toLowerCase().includes('admin')))
+      );
+      if (sUser && sUser.mustChangePassword === false && sUser.currentPassword) {
+        userRecord.passwordHash = sUser.currentPassword;
+        userRecord.mustChangePassword = false;
+        userRecord.isFirstLogin = false;
+        if (sUser.passwordHistory) {
+          userRecord.passwordHistory = sUser.passwordHistory;
+        }
+      }
+    } catch {
+      // Fallback transparent a dades de sharedDb
     }
 
-    // Comprovació de contrasenya incorrecta
-    if (!verification.valid) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
-        },
-        { status: 401 }
-      );
+    const attemptPassword = (password || '').trim();
+    const hasConfiguredPassword = Boolean(userRecord.passwordHash && userRecord.passwordHash !== '1234');
+
+    // Cas 1: Usuari amb contrasenya definitiva ja establerta (NO bucle de setup)
+    if (hasConfiguredPassword && userRecord.mustChangePassword === false && userRecord.isFirstLogin === false) {
+      const isCorrect = verifyPassword(attemptPassword, userRecord.passwordHash!);
+      if (!isCorrect) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
+          },
+          { status: 401 }
+        );
+      }
+      // Contrasenya vàlida -> sessió autoritzada directament
+    } else {
+      // Cas 2: Primer inici o requeriment de canvi de clau
+      if (userRecord.mustChangePassword || userRecord.isFirstLogin || !hasConfiguredPassword) {
+        const isInitialMatch = Boolean(
+          !attemptPassword || 
+          attemptPassword === '1234' || 
+          (userRecord.passwordHash && (attemptPassword === userRecord.passwordHash || verifyPassword(attemptPassword, userRecord.passwordHash)))
+        );
+
+        if (isInitialMatch) {
+          return NextResponse.json({
+            success: true,
+            requirePasswordSetup: true,
+            dni: userRecord.dni,
+            userId: userRecord.id,
+            name: userRecord.nomComplet,
+            message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
+          });
+        } else {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
+            },
+            { status: 401 }
+          );
+        }
+      }
+
+      // Verificació estàndard de hash
+      const isCorrect = verifyPassword(attemptPassword, userRecord.passwordHash || '');
+      if (!isCorrect) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
+          },
+          { status: 401 }
+        );
+      }
     }
 
     // Sessió validada amb èxit
@@ -123,6 +182,9 @@ export async function POST(request: Request) {
       institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
       authenticated: true,
       authMethod: `Credencials Corporatives (${userRecord.dni})`,
+      passwordConfigured: true,
+      mustChangePassword: false,
+      isFirstLogin: false,
       loginTime: new Date().toISOString(),
     };
 
@@ -138,6 +200,7 @@ export async function POST(request: Request) {
       httpOnly: false,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 8
     });
 
     // Registre immutable Merkle de l'inici de sessió per credencials
