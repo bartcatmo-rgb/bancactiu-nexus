@@ -26,6 +26,7 @@ import {
   AppDefinition
 } from '@bancactiu/ui-glass';
 import { BancActiuSocialWorkspace } from '@/components/workspaces/BancActiuSocialWorkspace';
+import { WorkshopAndRepairsWorkspace } from '@/components/workspaces/WorkshopAndRepairsWorkspace';
 import { resolveAppTargetUrl } from '@/lib/navigation';
 
 export default function BancActiuSocialUnifiedPage() {
@@ -114,44 +115,7 @@ export default function BancActiuSocialUnifiedPage() {
             )}
 
             {activeTab === 'taller-solidari' && (
-              <GlassCard className="p-6">
-                <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  <Hammer size={18} className="text-rose-400" />
-                  Estat del Taller de Reparació i Reutilització
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-white/10 text-slate-400 text-[11px] uppercase">
-                      <tr>
-                        <th className="p-3">Codi ID</th>
-                        <th className="p-3">Material Ortopèdic</th>
-                        <th className="p-3">Acció Mecànica Requerida</th>
-                        <th className="p-3">Voluntari Assignat</th>
-                        <th className="p-3">Estat</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10 text-slate-200">
-                      {reparacionsTaller.map((r) => (
-                        <tr key={r.id} className="hover:bg-white/5 transition">
-                          <td className="p-3 font-mono font-bold text-rose-300">{r.codi}</td>
-                          <td className="p-3 font-semibold text-white">{r.element}</td>
-                          <td className="p-3 text-slate-300">{r.accio}</td>
-                          <td className="p-3 text-slate-400">{r.voluntari}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              r.estat === 'PUNT_A_PUNT'
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                            }`}>
-                              {r.estat === 'PUNT_A_PUNT' ? 'A punt per lliurament' : 'En revisió'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </GlassCard>
+              <WorkshopAndRepairsWorkspace />
             )}
           </main>
         </div>

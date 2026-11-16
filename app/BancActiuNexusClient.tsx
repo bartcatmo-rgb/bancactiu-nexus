@@ -23,7 +23,12 @@ import {
   Download,
   KeyRound,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  PackagePlus,
+  Hammer,
+  Wrench,
+  Stethoscope,
+  HeartHandshake
 } from 'lucide-react';
 import {
   RadialAuraBackground,
@@ -44,6 +49,8 @@ import { SuperAdminAiAgentWorkspace } from '@/components/workspaces/SuperAdminAi
 import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnboardingWorkspace';
 import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/SuperAdminRolesAndServicesWorkspace';
 import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/SuperAdminInteroperabilityWorkspace';
+import { WorkshopAndRepairsWorkspace } from '@/components/workspaces/WorkshopAndRepairsWorkspace';
+import { NewLoanModal, NewLoanData } from '@/components/loans/NewLoanModal';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
 
@@ -63,6 +70,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null);
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const [activeRole, setActiveRole] = useState(initialUser?.role || 'SUPERADMIN');
+  const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
+  const handleOpenNewLoanModal = () => setIsNewLoanModalOpen(true);
 
   // Context dinàmic de Tenant (IP & Host resolution)
   const [tenantContext, setTenantContext] = useState<{
@@ -333,6 +342,32 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">2FA</span>
               </button>
 
+              {/* Botó 2.5: Nou Préstamo Interactiv (FASE 1) */}
+              <button
+                type="button"
+                onClick={handleOpenNewLoanModal}
+                title="Alta interactiva de Nou Préstamo d'Ortopèdia Comunitària"
+                className="group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border bg-cyan-900/70 hover:bg-cyan-800/90 border-cyan-400/40 hover:border-cyan-400 shadow-cyan-950/30"
+              >
+                <PackagePlus size={14} className="text-cyan-300 group-hover:scale-110 transition-transform" />
+                <span>Nou Préstamo</span>
+              </button>
+
+              {/* Botó 2.6: Taller Creu Roja (FASE 3) */}
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace(activeWorkspace === 'workshop-repairs' ? null : 'workshop-repairs')}
+                title="Taller Tècnic de Creu Roja i Reparacions d'Ajudes Tècniques"
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'workshop-repairs'
+                    ? 'bg-rose-600/40 border-rose-400 shadow-rose-500/20'
+                    : 'bg-slate-900/80 hover:bg-rose-900/30 border-white/10 hover:border-rose-400/40'
+                }`}
+              >
+                <Wrench size={14} className="text-rose-400 group-hover:scale-110 transition-transform" />
+                <span>Taller Creu Roja</span>
+              </button>
+
               {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
               <div className="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 shadow-sm">
                 <button
@@ -382,6 +417,94 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           onOpenLauncher={() => setIsLauncherOpen(true)}
           onLogout={handleLogout}
         />
+
+        {/* FASE 2: BARRA DE SEPARACIÓ D'ACCESSOS PER ROLS OPERATIUS */}
+        <div className="my-2.5 p-2 sm:p-2.5 rounded-2xl bg-slate-950/80 border border-purple-500/30 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 pl-2">
+            <ShieldCheck size={16} className="text-purple-400 shrink-0" />
+            <div>
+              <span className="text-xs font-black tracking-wide text-white uppercase block">
+                Separació d'Accessos per Rols Operatius:
+              </span>
+              <span className="text-[10px] text-slate-400">
+                Pestanyes i visió del sistema adaptades per a cada rol d'intervenció
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
+            {/* Rol 1: Treballador del CAP */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('TECNIC_SALUT');
+                showToast("Rol Actiu: Treballador del CAP", "Gestió clínica, validació Barthel i prescripció mèdica d'ortopèdia.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeRole === 'TECNIC_SALUT'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400 shadow-emerald-500/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-emerald-400/40'
+              }`}
+            >
+              <Stethoscope size={14} className={activeRole === 'TECNIC_SALUT' ? 'text-white' : 'text-emerald-400'} />
+              <span>Treballador del CAP</span>
+              <span className="text-[10px] opacity-80 hidden lg:inline">(Prescripció Mèdica)</span>
+            </button>
+
+            {/* Rol 2: Voluntari / Entitat Veïnal */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('VOLUNTARI');
+                showToast("Rol Actiu: Voluntari / Entitat Veïnal", "Peticions de suport veïnal, acompanyament i derivacions.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeRole === 'VOLUNTARI'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-400 shadow-amber-500/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-amber-400/40'
+              }`}
+            >
+              <HeartHandshake size={14} className={activeRole === 'VOLUNTARI' ? 'text-white' : 'text-amber-400'} />
+              <span>Voluntari / Entitat Veïnal</span>
+              <span className="text-[10px] opacity-80 hidden lg:inline">(Peticions i Suport)</span>
+            </button>
+
+            {/* Rol 3: Centre de Reparació (Creu Roja) */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('TERCER_SECTOR');
+                setActiveWorkspace('workshop-repairs');
+                showToast("Rol Actiu: Centre de Reparació (Creu Roja)", "Accés directe al workspace tècnic de tallers i recondicionament.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeWorkspace === 'workshop-repairs' || activeRole === 'TERCER_SECTOR'
+                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-400 shadow-rose-500/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-rose-400/40'
+              }`}
+            >
+              <Wrench size={14} className={activeWorkspace === 'workshop-repairs' ? 'text-white' : 'text-rose-400'} />
+              <span>Centre de Reparació (Creu Roja)</span>
+              <span className="text-[10px] opacity-80 hidden lg:inline">(Gestió Tècnica)</span>
+            </button>
+
+            {/* Rol SuperAdmin Global */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('SUPERADMIN');
+                setActiveWorkspace(null);
+              }}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                activeRole === 'SUPERADMIN' && !activeWorkspace
+                  ? 'bg-purple-600/40 text-purple-200 border-purple-400'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
+              }`}
+            >
+              SuperAdmin
+            </button>
+          </div>
+        </div>
 
         {/* Zona de Treball Dinàmica o Launchpad */}
         {!activeWorkspace ? (
@@ -450,12 +573,28 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   >
                     Pasarel·les AOC
                   </GlassButton>
+                  <GlassButton
+                    variant="primary"
+                    size="sm"
+                    onClick={handleOpenNewLoanModal}
+                    icon={<PackagePlus size={15} />}
+                  >
+                    Nou Préstamo
+                  </GlassButton>
+                  <GlassButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setActiveWorkspace('workshop-repairs')}
+                    icon={<Wrench size={15} />}
+                  >
+                    Taller Creu Roja
+                  </GlassButton>
                 </div>
               </div>
             </GlassCard>
 
-            {/* Quadrícula de 4 Mòduls SuperAdmin ("Bogons") */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Quadrícula de 5 Mòduls Operatius i SuperAdmin */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
               {/* Mòdul 1: Alta Descentralitzada de Centres (Navegació ordinària) */}
               <GlassCard
                 variant="interactive"
@@ -558,6 +697,30 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
+
+              {/* Mòdul 5: Taller & Reparacions Creu Roja (FASE 3) */}
+              <GlassCard
+                variant="interactive"
+                glowColor="rose"
+                className="p-4 sm:p-5 flex flex-col justify-between"
+                onClick={() => setActiveWorkspace('workshop-repairs')}
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-pink-600 to-amber-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                    <Hammer className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                    Taller & Reparacions (Creu Roja)
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                    Gestió del cicle de vida d'avaries (Pendent, Taller, Verificació de Seguretat i Retorn a Estoc).
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-xs font-bold text-rose-300 pt-2 border-t border-white/10">
+                  <span>Gestionar Taller</span>
+                  <ArrowRight size={14} />
+                </div>
+              </GlassCard>
             </div>
 
             {/* Launcher Embolicat per saltar a altres aplicacions */}
@@ -634,6 +797,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 />
               </div>
             )}
+
+            {activeWorkspace === 'workshop-repairs' && (
+              <WorkshopAndRepairsWorkspace
+                onClose={() => setActiveWorkspace(null)}
+                onShowToast={(title, msg) => showToast(title, msg)}
+              />
+            )}
           </main>
         )}
 
@@ -684,6 +854,18 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           currentUserName={initialUser?.name || 'Marc Cachinero Baranda'}
           currentUserRole={activeRole}
           moduleName="bancactiu-nexus"
+        />
+
+        {/* Modal Interactiu de Nou Préstamo d'Ortopèdia Comunitària (FASE 1) */}
+        <NewLoanModal
+          isOpen={isNewLoanModalOpen}
+          onClose={() => setIsNewLoanModalOpen(false)}
+          onLoanCreated={(newLoan) => {
+            showToast(
+              'Préstec d\'Ortopèdia Lliurat amb Èxit',
+              `Expedient ${newLoan.expedient} assignat a ${newLoan.ciutada} (${newLoan.material}). Codi QR: ${newLoan.codiQR}`
+            );
+          }}
         />
 
         {/* Modal Ineludible de Drets de Propietat Intel·lectual (Primer Login) */}
