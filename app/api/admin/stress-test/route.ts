@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateStressTestMetrics, runLiveStressTest } from '@/lib/stress-test-engine';
+import { generateStressTestMetrics, runLiveStressTest, generateCustomStressReport } from '@/lib/stress-test-engine';
 import { guardApiAccess } from '@/lib/security-api-guard';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +17,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     const data = generateStressTestMetrics();
+    data.customExecution = generateCustomStressReport();
     return NextResponse.json({
       ok: true,
       data,

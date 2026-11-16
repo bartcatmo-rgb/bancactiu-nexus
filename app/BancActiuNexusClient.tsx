@@ -356,17 +356,6 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold">2FA</span>
               </button>
 
-              {/* Botó 2.5: Nou Préstamo Interactiv (FASE 1) */}
-              <button
-                type="button"
-                onClick={handleOpenNewLoanModal}
-                title="Alta interactiva de Nou Préstamo d'Ortopèdia Comunitària"
-                className="group px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow-sm border bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-cyan-500 shadow-cyan-500/15"
-              >
-                <PackagePlus size={14} className="text-white group-hover:scale-110 transition-transform" />
-                <span>Nou Préstamo</span>
-              </button>
-
               {/* Botó 2.6: Taller Creu Roja (FASE 3) */}
               <button
                 type="button"
@@ -494,6 +483,19 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <span>Treballador del CAP</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">(Prescripció Mèdica)</span>
             </button>
+
+            {/* Accés exclusiu de prescripció per al personal clínic del CAP */}
+            {activeRole === 'TECNIC_SALUT' && (
+              <button
+                type="button"
+                onClick={handleOpenNewLoanModal}
+                title="Alta interactiva de Nou Préstec Clínic d'Ortopèdia Comunitària"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 border shadow-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border-emerald-500 shadow-emerald-500/20 animate-fadeIn"
+              >
+                <PackagePlus size={14} className="text-white" />
+                <span>+ Nou Préstec Clínic</span>
+              </button>
+            )}
 
             {/* Rol 2: Voluntari / Entitat Veïnal */}
             <button
@@ -640,14 +642,6 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     icon={<Globe size={15} />}
                   >
                     Pasarel·les AOC
-                  </GlassButton>
-                  <GlassButton
-                    variant="primary"
-                    size="sm"
-                    onClick={handleOpenNewLoanModal}
-                    icon={<PackagePlus size={15} />}
-                  >
-                    Nou Préstamo
                   </GlassButton>
                   <GlassButton
                     variant="secondary"
