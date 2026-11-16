@@ -9,22 +9,23 @@ export async function POST(request: Request) {
     // 1. Autenticació per Certificat Digital Oficial (idCAT / T-CAT corporatiu / DNIe)
     if (authMethod === 'certificate') {
       const authenticatedUser = {
-        userId: 'usr-1',
-        dni: '52622304Y',
-        name: 'Mireia Valls i Grau',
+        userId: 'usr-superadmin-marc',
+        dni: '48956602Z',
+        name: 'Marc Cachinero Baranda',
+        email: 'marccachinero@gmail.com',
         role: 'SUPERADMIN',
-        roleLabel: 'SuperAdmin GAPIC · Control Catalunya',
-        institution: 'Generalitat de Catalunya · Departament de Salut',
+        roleLabel: 'SuperAdmin · Control Total Catalunya & IETI',
+        institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
         certificateIssuer: 'EC-ACC (Agència Catalana de Certificació)',
         authenticated: true,
-        authMethod: 'idCAT Certificat Digital (DNI 52622304Y)',
+        authMethod: 'idCAT Certificat Digital (DNI 48956602Z)',
         loginTime: new Date().toISOString(),
       };
 
       const response = NextResponse.json({
         success: true,
         user: authenticatedUser,
-        message: 'Sessió iniciada correctament via idCAT amb titular DNI 52622304Y'
+        message: 'Sessió iniciada correctament via idCAT amb titular DNI 48956602Z (Marc Cachinero Baranda)'
       });
 
       const sessionString = encodeURIComponent(JSON.stringify(authenticatedUser));
@@ -39,65 +40,76 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // 2. Autenticació per Credencials (DNI o usuari corporatiu)
+    // 2. Autenticació per Credencials
     const rawIdentifier = (identifier || '').trim();
-    const cleanDni = rawIdentifier.toUpperCase();
+    if (!rawIdentifier) {
+      return NextResponse.json(
+        { success: false, error: 'Cal indicar el vostre DNI o nom d\'usuari.' },
+        { status: 400 }
+      );
+    }
 
-    // Mapeig d'àlies corporatius al DNI oficial del Superadministrador
-    const isSuperAdminAlias =
-      cleanDni === '52622304Y' ||
-      cleanDni === 'SUPERADMIN' ||
-      cleanDni === 'SUPERADMIN@SALUT.CAT' ||
-      cleanDni === 'ADMIN';
+    const cleanId = rawIdentifier.toUpperCase();
 
-    if (!isSuperAdminAlias) {
+    // Mapeig intel·ligent d'identificadors
+    let lookupTarget = cleanId;
+    if (cleanId === 'ADMINISTRADOR' || cleanId === 'ADMIN' || cleanId === 'DOCENT' || cleanId === 'PROFESSOR') {
+      lookupTarget = 'Administrador';
+    } else if (cleanId === 'SUPERADMIN' || cleanId === 'MARC' || cleanId === 'MARCCACHINERO@GMAIL.COM') {
+      lookupTarget = '48956602Z';
+    }
+
+    // Verificar credencials a la base de dades
+    const verification = await sharedDb.verifyUserPassword(lookupTarget, password || '');
+
+    if (!verification.user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Identificador no autoritzat. L\'accés al Gateway Launcher està reservat exclusivament al Superadministrador institucional (DNI 52622304Y).'
+          error: 'Usuari no autoritzat o no registrat a la plataforma BancActiu 2.0.'
         },
         { status: 401 }
       );
     }
 
-    const officialDni = '52622304Y';
+    const userRecord = verification.user;
 
-    // Comprovar estat de contrasenya a la base de dades
-    const verification = await sharedDb.verifyUserPassword(officialDni, password || '');
-
-    // Si és el primer accés o el Superadmin encara no té contrasenya establerta:
+    // Primer accés obligatori per canviar contrasenya (p.ex. usuari Administrador amb clau 1234)
     if (verification.mustChangePassword) {
       return NextResponse.json({
         success: true,
         requirePasswordSetup: true,
-        dni: officialDni,
-        name: 'Mireia Valls (SuperAdmin GAPIC)',
-        message: 'Primer accés detectat per al Superadministrador (DNI 52622304Y). És obligatori definir una nova contrasenya robusta.'
+        dni: userRecord.dni,
+        userId: userRecord.id,
+        name: userRecord.nomComplet,
+        message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
       });
     }
 
-    // Si ja té contrasenya i no és vàlida:
+    // Comprovació de contrasenya incorrecta
     if (!verification.valid) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Clau d\'accés incorrecta per al Superadministrador (DNI 52622304Y).'
+          error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
         },
         { status: 401 }
       );
     }
 
-    // Credencials correctes
-    const userRecord = verification.user;
+    // Sessió validada amb èxit
     const authenticatedUser = {
-      userId: userRecord?.id || 'usr-1',
-      dni: officialDni,
-      name: userRecord?.nomComplet || 'Mireia Valls (SuperAdmin GAPIC)',
-      role: 'SUPERADMIN',
-      roleLabel: 'SuperAdmin GAPIC · Control Catalunya',
-      institution: 'GAPIC · Generalitat de Catalunya & Cornellà',
+      userId: userRecord.id,
+      dni: userRecord.dni,
+      name: userRecord.nomComplet,
+      email: userRecord.email,
+      role: userRecord.rolPrincipal,
+      roleLabel: userRecord.rolPrincipal === 'SUPERADMIN' 
+        ? 'SuperAdmin · Control Total Catalunya & IETI' 
+        : `${userRecord.rolPrincipal} · BancActiu`,
+      institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
       authenticated: true,
-      authMethod: 'Credencials Corporatives DNI 52622304Y',
+      authMethod: `Credencials Corporatives (${userRecord.dni})`,
       loginTime: new Date().toISOString(),
     };
 

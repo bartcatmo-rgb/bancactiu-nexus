@@ -200,13 +200,13 @@ export function KenzoAssistant() {
 
     // Resposta contextualitzada de l'assistent segons perfil
     setTimeout(() => {
-      let reply = `He registrat la vostra consulta al registre d'auditoria del Superadministrador (DNI 52622304Y) via ${currentProfile.name}.`;
+      let reply = `He registrat la vostra consulta al registre d'auditoria del Superadministrador via ${currentProfile.name}.`;
       const lower = userText.toLowerCase();
 
       if (lower.includes('aparença') || lower.includes('perfil') || lower.includes('kenza') || lower.includes('kenzo') || lower.includes('core')) {
         reply = `Podeu canviar d'aparença en qualsevol moment utilitzant el selector superior: Kenzo (Masculí/Executiu), Kenza (Femenina/Executiva) o Kenz Core (Hologràfic/Tecnològic). La vostra preferència es manté guardada.`;
       } else if (lower.includes('auditoria') || lower.includes('seguretat') || lower.includes('vulnerabilitat')) {
-        reply = `Auditoria completada (${currentProfile.name}): Perímetre protegit amb Zero-Trust. L'únic compte arrel acreditat és el DNI 52622304Y. Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.`;
+        reply = `Auditoria completada (${currentProfile.name}): Perímetre protegit amb Zero-Trust. Comptes acreditats: Marc Cachinero Baranda (DNI 48956602Z) i Administrador (IETI). Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.`;
       } else if (lower.includes('metrica') || lower.includes('salut') || lower.includes('dades')) {
         reply = 'Mètriques actuals: 2.150 ajudes tècniques en circulació, taxa de reutilització comunitària del 94.2% i temps de resposta d\'interoperabilitat de 16.4ms.';
       } else if (lower.includes('slide') || lower.includes('presentacio') || lower.includes('diapositiva')) {
@@ -242,7 +242,7 @@ export function KenzoAssistant() {
             </div>
             <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
               <span className="text-2xl font-black text-white">Zero-Trust</span>
-              <p className="text-xs text-emerald-300 mt-1">SuperAdmin DNI 52622304Y</p>
+              <p className="text-xs text-emerald-300 mt-1">SuperAdmin DNI 48956602Z</p>
             </div>
           </div>
           <p className="text-sm text-slate-300 leading-relaxed">
@@ -264,7 +264,7 @@ export function KenzoAssistant() {
                 <Lock className="w-5 h-5 text-emerald-400" />
                 <div>
                   <div className="text-xs font-bold text-white">Identitat d'Accés Superadmin</div>
-                  <div className="text-[10px] text-slate-400">Vinculada estrictament al DNI 52622304Y</div>
+                  <div className="text-[10px] text-slate-400">Vinculada a Marc Cachinero Baranda (48956602Z) i Administrador</div>
                 </div>
               </div>
               <GlassBadge variant="emerald">Validat 100%</GlassBadge>
@@ -440,7 +440,7 @@ export function KenzoAssistant() {
                     <GlassBadge variant={appearance === 'kenza' ? 'purple' : appearance === 'core' ? 'emerald' : 'blue'} pulse>Online</GlassBadge>
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    {currentProfile.role} &middot; DNI: <span className="text-cyan-300 font-mono">52622304Y</span>
+                    {currentProfile.role} &middot; DNI / ID: <span className="text-cyan-300 font-mono">48956602Z / Administrador</span>
                   </p>
                 </div>
               </div>
@@ -583,7 +583,7 @@ export function KenzoAssistant() {
                     <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-slate-400">DNI Superadmin:</span>
-                        <div className="font-mono text-cyan-300 font-bold">52622304Y</div>
+                        <div className="font-mono text-cyan-300 font-bold">48956602Z</div>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-slate-400">Control Perimetral:</span>

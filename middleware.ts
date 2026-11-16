@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     res.headers.set('x-tenant-code', tenant.code);
     res.headers.set('x-tenant-name', tenant.name);
     res.headers.set('x-tenant-badge', tenant.badgeLabel);
+    res.headers.set('x-centre-nom', tenant.name);
     res.headers.set('x-client-ip', clientIp);
     res.cookies.set('bancactiu_tenant', tenantCookieValue, {
       path: '/',

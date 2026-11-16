@@ -20,7 +20,19 @@ export default async function BancActiuNexusPage() {
     redirect('/login');
   }
 
-  if (!sessionUser || !sessionUser.authenticated || sessionUser.role !== 'SUPERADMIN' || sessionUser.dni !== '52622304Y') {
+  if (!sessionUser || !sessionUser.authenticated) {
+    redirect('/login');
+  }
+
+  const isAuthorized =
+    sessionUser.role === 'SUPERADMIN' ||
+    sessionUser.dni === '48956602Z' ||
+    sessionUser.dni === '52622304Y' ||
+    sessionUser.dni === 'ADMINISTRADOR' ||
+    sessionUser.userId === 'Administrador' ||
+    sessionUser.userId === 'usr-superadmin-marc';
+
+  if (!isAuthorized) {
     redirect('/login');
   }
 

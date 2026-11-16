@@ -84,9 +84,9 @@ function LoginForm() {
       if (res.ok && data.success) {
         // Comprovar si el Superadmin requereix configurar la contrasenya inicial (First-Time Setup)
         if (data.requirePasswordSetup) {
-          setTargetDni(data.dni || identifier.trim().toUpperCase() || '52622304Y');
+          setTargetDni(data.dni || identifier.trim().toUpperCase() || '48956602Z');
           setIsFirstTimeSetup(true);
-          setSuccessMsg(data.message || 'Primer accés detectat. Definiu la vostra contrasenya de Superadministrador.');
+          setSuccessMsg(data.message || 'Primer accés detectat. Definiu la vostra contrasenya segura.');
           return;
         }
 
@@ -118,7 +118,7 @@ function LoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dni: targetDni || '52622304Y',
+          dni: targetDni || '48956602Z',
           newPassword,
           confirmPassword
         })
@@ -183,7 +183,7 @@ function LoginForm() {
         {isFirstTimeSetup ? (
           <form onSubmit={handleSetupPassword} className="space-y-4">
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200">
-              Superadministrador vinculat: <strong className="font-mono text-white">{targetDni || '52622304Y'}</strong> (Mireia Valls)
+              Usuari vinculat: <strong className="font-mono text-white">{targetDni || 'ADMINISTRADOR'}</strong>
             </div>
 
             <div>
@@ -314,11 +314,11 @@ function LoginForm() {
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
                     autoComplete="off"
-                    placeholder="ex: 52622304Y"
+                    placeholder="ex: 48956602Z o Administrador"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600 uppercase"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
-                    Compte arrel vinculat al DNI institucional <span className="font-mono text-cyan-300">52622304Y</span>
+                    Identificació per DNI acreditat (<span className="font-mono text-cyan-300">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-300">Administrador</span>)
                   </p>
                 </div>
 
@@ -356,10 +356,10 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => {
-                      setTargetDni('52622304Y');
+                      setTargetDni(identifier.trim() || 'ADMINISTRADOR');
                       setIsFirstTimeSetup(true);
                       setErrorMsg(null);
-                      setSuccessMsg('Configuració de primer accés per al DNI 52622304Y.');
+                      setSuccessMsg('Configuració de primer accés. Definiu una nova contrasenya segura.');
                     }}
                     className="text-xs text-amber-300 hover:text-amber-200 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
                   >

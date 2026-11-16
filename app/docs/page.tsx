@@ -33,15 +33,15 @@ const documents = [
     icon: <ShieldCheck className="w-7 h-7 text-purple-400" />,
     gradient: 'from-purple-600/30 to-indigo-600/30',
     border: 'border-purple-500/30',
-    desc: "Guia completa de control d'infraestructura, alta jeràrquica descentralitzada de centres sanitaris de Catalunya, gestió d'usuaris vinculada estrictament al DNI 52622304Y, i execució de simulacions de càrrega massiva.",
+    desc: "Guia completa de control d'infraestructura, alta jeràrquica descentralitzada de centres sanitaris i educatius de Catalunya (IETI), gestió d'usuaris vinculada a Marc Cachinero Baranda (DNI 48956602Z) i Administrador, i execució de simulacions de càrrega massiva.",
     pdfUrl: '/docs/MANUAL_SUPERADMIN_NEXUS_2.0.pdf',
     size: '196 KB',
     version: 'v2.0-PROD',
     highlights: [
-      'Vinculació estricta DNI 52622304Y (Mireia Valls)',
-      'Protocol d’activació de contrasenya obligatòria',
-      'Alta descentralitzada de centres i CAPS',
-      'Laboratori de càrrega GAPIC (1-3 anys)'
+      'Vinculació oficial SuperAdmin DNI 48956602Z (Marc Cachinero Baranda)',
+      'Protocol d’activació de contrasenya obligatòria docent (Administrador)',
+      'Alta descentralitzada de centres i CAPS (Institut Esteve Terrades i Illa)',
+      'Laboratori de càrrega GAPIC & IETI (1-3 anys)'
     ]
   },
   {
@@ -167,7 +167,7 @@ export default function DocsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <GlassBadge variant="purple">Superadmin DNI: 52622304Y</GlassBadge>
+            <GlassBadge variant="purple">Superadmin DNI: 48956602Z</GlassBadge>
             <GlassBadge variant="emerald">ENS Nivell Alt</GlassBadge>
           </div>
         </header>
@@ -272,7 +272,7 @@ export default function DocsPage() {
           <div className="mt-2 sm:mt-0 flex gap-4">
             <span className="text-emerald-400 font-medium">ENS Nivell Alt Verificat</span>
             <span>·</span>
-            <span className="text-purple-400 font-medium">SuperAdmin 52622304Y</span>
+            <span className="text-purple-400 font-medium">SuperAdmin Marc Cachinero (48956602Z)</span>
           </div>
         </footer>
       </div>

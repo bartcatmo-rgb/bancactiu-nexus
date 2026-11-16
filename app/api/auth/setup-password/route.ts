@@ -8,11 +8,13 @@ export async function POST(request: Request) {
 
     const normalizedDni = (dni || '').trim().toUpperCase();
 
-    if (normalizedDni !== '52622304Y') {
+    const user = await sharedDb.getUserByDni(normalizedDni);
+
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Operació denegada. L\'establiment inicial de contrasenya només està autoritzat per al Superadministrador arrel (DNI 52622304Y).'
+          error: 'Operació denegada. Usuari no trobat a la base de dades institucional.'
         },
         { status: 403 }
       );
@@ -58,14 +60,17 @@ export async function POST(request: Request) {
     await sharedDb.setUserPassword(normalizedDni, newPassword);
 
     const authenticatedUser = {
-      userId: 'usr-1',
-      dni: '52622304Y',
-      name: 'Mireia Valls (SuperAdmin GAPIC)',
-      role: 'SUPERADMIN',
-      roleLabel: 'SuperAdmin GAPIC · Control Catalunya',
-      institution: 'GAPIC · Generalitat de Catalunya & Cornellà',
+      userId: user.id,
+      dni: user.dni,
+      name: user.nomComplet,
+      email: user.email,
+      role: user.rolPrincipal,
+      roleLabel: user.rolPrincipal === 'SUPERADMIN' 
+        ? 'SuperAdmin · Control Total Catalunya & IETI' 
+        : `${user.rolPrincipal} · BancActiu`,
+      institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
       authenticated: true,
-      authMethod: 'Credencials Personals DNI 52622304Y',
+      authMethod: `Credencials Personals (${user.dni})`,
       passwordConfigured: true,
       loginTime: new Date().toISOString(),
     };
@@ -73,7 +78,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       user: authenticatedUser,
-      message: 'Contrasenya de Superadministrador configurada correctament. Accés autoritzat.'
+      message: `Contrasenya per a l'usuari ${user.nomComplet} configurada correctament. Accés autoritzat.`
     });
 
     // Desplegar cookie de sessió

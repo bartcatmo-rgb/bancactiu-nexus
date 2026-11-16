@@ -44,6 +44,7 @@ import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnb
 import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/SuperAdminRolesAndServicesWorkspace';
 import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/SuperAdminInteroperabilityWorkspace';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
+import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
 
 interface BancActiuNexusClientProps {
   initialUser?: {
@@ -52,6 +53,8 @@ interface BancActiuNexusClientProps {
     role?: string;
     roleLabel?: string;
     institution?: string;
+    userId?: string;
+    email?: string;
   } | null;
 }
 
@@ -156,7 +159,24 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     }
   };
 
-  const isSuperAdmin52622304Y = initialUser?.dni === '52622304Y' || (initialUser?.role === 'SUPERADMIN' && (!initialUser?.dni || initialUser.dni === '52622304Y'));
+  const isSuperAdminAuthorized =
+    initialUser?.role === 'SUPERADMIN' ||
+    initialUser?.dni === '48956602Z' ||
+    initialUser?.dni === '52622304Y' ||
+    initialUser?.userId === 'Administrador' ||
+    initialUser?.userId === 'usr-superadmin-marc';
+
+  const [showIpModal, setShowIpModal] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userKey = initialUser?.dni || initialUser?.name || 'current_user';
+      const hasAccepted = localStorage.getItem(`bancactiu_ip_accepted_${userKey}`) || localStorage.getItem('bancactiu_ip_global_accepted');
+      if (!hasAccepted) {
+        setShowIpModal(true);
+      }
+    }
+  }, [initialUser]);
 
   const handleNavigateModule = (appId: string, defaultPort: number) => {
     const targetUrl = resolveAppTargetUrl(appId, defaultPort);
@@ -185,14 +205,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
   return (
     <RadialAuraBackground variant="nexus" className="min-h-screen w-full flex flex-col overflow-y-auto">
-      {/* 1. Barra Superior Exclusiva de Superadministrador (DNI 52622304Y) */}
-      {isSuperAdmin52622304Y && (
+      {/* 1. Barra Superior Exclusiva de Superadministrador */}
+      {isSuperAdminAuthorized && (
         <aside
           aria-label="Barra de Control SuperAdministrador"
           className="sticky top-0 z-50 w-full border-b border-purple-500/30 bg-slate-950/85 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-            {/* Esquerra: Identitat SuperAdmin DNI 52622304Y */}
+            {/* Esquerra: Identitat SuperAdmin */}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-lg border border-white/20">
                 <Shield className="w-4 h-4 text-purple-200" />
@@ -203,14 +223,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     Consola Exclusiva SuperAdmin
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    DNI: 52622304Y
+                    DNI / ID: {initialUser?.dni || '48956602Z'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{initialUser?.name || "Superadministrador"} · Governança i Control Central</span>
+                  <span>{initialUser?.name || "Marc Cachinero Baranda"} · Governança i Control Central</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30">
-                    Tenant: {tenantContext.shortName}
+                    Centre: {tenantContext.shortName}
                   </span>
                 </p>
               </div>
@@ -656,10 +676,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           actionTitle={authModalConfig.actionTitle}
           actionDescription={authModalConfig.actionDescription}
           actionSeverity={authModalConfig.actionSeverity}
-          currentUserDni={initialUser?.dni || '52622304Y'}
-          currentUserName={initialUser?.name || 'Mireia Valls (SuperAdmin)'}
+          currentUserDni={initialUser?.dni || '48956602Z'}
+          currentUserName={initialUser?.name || 'Marc Cachinero Baranda'}
           currentUserRole={activeRole}
           moduleName="bancactiu-nexus"
+        />
+
+        {/* Modal Ineludible de Drets de Propietat Intel·lectual (Primer Login) */}
+        <IntellectualPropertyModal
+          isOpen={showIpModal}
+          onAccept={() => setShowIpModal(false)}
+          user={initialUser}
         />
       </div>
     </RadialAuraBackground>
