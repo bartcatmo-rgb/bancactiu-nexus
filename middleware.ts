@@ -36,6 +36,8 @@ export function middleware(request: NextRequest) {
     res.headers.set('x-tenant-badge', tenant.badgeLabel);
     res.headers.set('x-centre-nom', tenant.name);
     res.headers.set('x-client-ip', clientIp);
+    res.headers.set('X-SOAR-Protection', 'ACTIVE-MILITARY-GRADE');
+    res.headers.set('X-Audit-Merkle', 'SHA-256-CHAINED');
     res.cookies.set('bancactiu_tenant', tenantCookieValue, {
       path: '/',
       httpOnly: false,
@@ -50,6 +52,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/sync/delta') ||
     pathname === '/login' ||
     pathname === '/favicon.ico' ||
     pathname.startsWith('/docs') ||

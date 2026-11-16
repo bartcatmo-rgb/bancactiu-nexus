@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
+import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,18 @@ export async function POST(request: Request) {
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 8
       });
+
+      // Registre immutable Merkle de l'accés oficial per certificat
+      try {
+        appendAuditBlock(
+          authenticatedUser.dni,
+          'CERTIFICATE_LOGIN_SUCCESS',
+          { issuer: authenticatedUser.certificateIssuer, email: authenticatedUser.email },
+          request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1'
+        );
+      } catch (err) {
+        console.warn('[MERKLE-AUDIT] Error registrant bloc:', err);
+      }
 
       return response;
     }
@@ -127,6 +140,18 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 8
     });
+
+    // Registre immutable Merkle de l'inici de sessió per credencials
+    try {
+      appendAuditBlock(
+        authenticatedUser.dni,
+        'CREDENTIALS_LOGIN_SUCCESS',
+        { userId: authenticatedUser.userId, role: authenticatedUser.role },
+        request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1'
+      );
+    } catch (err) {
+      console.warn('[MERKLE-AUDIT] Error registrant bloc:', err);
+    }
 
     return response;
   } catch (err: any) {

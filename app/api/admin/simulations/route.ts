@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { INSTITUTIONAL_TENANTS } from '@bancactiu/db';
 import { guardApiAccess } from '@/lib/security-api-guard';
 import { isSuperAdminEmergencyActor } from '@/lib/security-lockdown';
+import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -226,6 +227,22 @@ export async function POST(request: Request): Promise<NextResponse> {
   const totalVolumGb = projections[projections.length - 1].volumDadesGb;
   const latenciaFinalMs = projections[projections.length - 1].latenciaMitjanaMs;
 
+  // Registre criptogràfic a la cadena Merkle d'auditoria immutable
+  const auditBlock = appendAuditBlock(
+    actorDni,
+    `SUPERADMIN_SIMULATION_${mode.toUpperCase()}`,
+    {
+      mode,
+      simulationYears,
+      totalTenants: tenantReports.length,
+      selectedSuites,
+      tpsMaxim: totalTpsPic,
+      volumGb: totalVolumGb
+    },
+    guard.clientIp,
+    { ensLevel: 'HIGH', framework: 'BancActiu 3.0 Enterprise' }
+  );
+
   return NextResponse.json({
     ok: true,
     dataExecucio: new Date().toISOString(),
@@ -233,6 +250,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     mode,
     simulationYears,
     totalTenantsAuditats: tenantReports.length,
+    merkleRootHash: auditBlock.blockHash,
+    merkleBlockIndex: auditBlock.index,
     resumGlobal: {
       estatGeneral: 'EXCEL·LENT - ENS NIVELL ALT VALIDAT',
       complimentEnsNivellAltPercent: 100,

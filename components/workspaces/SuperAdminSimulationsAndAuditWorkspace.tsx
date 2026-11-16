@@ -351,6 +351,12 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                   <p className="text-xs text-slate-300">
                     Compliment ENS: <strong className="text-emerald-300">100%</strong> · Zero-Trust: <strong className="text-cyan-300">Actiu</strong> · {massiveResults.tenantReports?.length} Tenants Verificats
                   </p>
+                  {(massiveResults as any).merkleRootHash && (
+                    <div className="mt-1 text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+                      <Lock size={11} className="text-emerald-400" />
+                      <span>Merkle Root Hash: <strong className="text-cyan-300">{((massiveResults as any).merkleRootHash).slice(0, 16)}...</strong> (Bloc #{((massiveResults as any).merkleBlockIndex)})</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-xs font-mono text-slate-400">
