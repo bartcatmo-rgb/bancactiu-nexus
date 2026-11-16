@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Bot,
   Sparkles,
@@ -29,7 +29,9 @@ import {
   Boxes,
   Cpu,
   User,
-  Palette
+  Palette,
+  GripHorizontal,
+  Minus
 } from 'lucide-react';
 import {
   GlassCard,
@@ -130,6 +132,17 @@ export function KenzoAssistant() {
   const [activeTab, setActiveTab] = useState<'audit' | 'metrics' | 'slides' | 'chat'>('audit');
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // Capacitat de finestra arrossegable (Draggable) amb memòria de posició
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({
+    startX: 0,
+    startY: 0,
+    posX: 0,
+    posY: 0,
+  });
+  const windowRef = useRef<HTMLDivElement>(null);
+
   // Perfil d'aparença seleccionable per l'usuari (Kenzo, Kenza, Kenz Core)
   const [appearance, setAppearance] = useState<AppearanceProfile>('kenzo');
 
@@ -146,10 +159,70 @@ export function KenzoAssistant() {
           return prev;
         });
       }
+
+      const savedPos = localStorage.getItem('bancactiu_kenzo_pos');
+      if (savedPos) {
+        const parsed = JSON.parse(savedPos);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          setPosition(parsed);
+        }
+      }
     } catch {
       // Ignorar errors en entorns SSR
     }
   }, []);
+
+  // Lògica de moviment draggable
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isFullScreen) return;
+    // Evitar disparar si clica en un botó
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    setIsDragging(true);
+    const initialRect = windowRef.current?.getBoundingClientRect();
+    const currentX = position?.x ?? (initialRect ? initialRect.left : Math.max(10, window.innerWidth - 530));
+    const currentY = position?.y ?? (initialRect ? initialRect.top : Math.max(10, window.innerHeight - 620));
+
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: currentX,
+      posY: currentY,
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.startX;
+      const dy = e.clientY - dragStartRef.current.startY;
+
+      const newX = Math.max(10, Math.min(window.innerWidth - 320, dragStartRef.current.posX + dx));
+      const newY = Math.max(10, Math.min(window.innerHeight - 150, dragStartRef.current.posY + dy));
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        if (position) {
+          try {
+            localStorage.setItem('bancactiu_kenzo_pos', JSON.stringify(position));
+          } catch {}
+        }
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, position]);
 
   const currentProfile = PROFILES[appearance];
 
@@ -414,22 +487,36 @@ export function KenzoAssistant() {
         </div>
       )}
 
-      {/* Caixa flotant de l'assistent Kenzo */}
+      {/* Caixa flotant de l'assistent Kenzo (Arrossegable / Draggable) */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-300 ${
+          ref={windowRef}
+          style={
+            !isFullScreen && position
+              ? { left: `${position.x}px`, top: `${position.y}px`, right: 'auto', bottom: 'auto' }
+              : undefined
+          }
+          className={`fixed z-50 transition-shadow ${
             isFullScreen
               ? 'inset-4 md:inset-8'
+              : position
+              ? 'w-[94vw] sm:w-[500px] max-h-[88vh]'
               : 'bottom-6 right-6 w-[94vw] sm:w-[500px] max-h-[88vh]'
           }`}
         >
           <GlassCard
             variant="glow"
             glowColor={currentProfile.glowColor}
-            className="w-full h-full flex flex-col backdrop-blur-3xl shadow-2xl border-white/20 p-4 sm:p-5"
+            className="w-full h-full flex flex-col backdrop-blur-3xl shadow-2xl border-white/20 p-4 sm:p-5 select-none"
           >
-            {/* Capçalera de l'assistent */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+            {/* Capçalera de l'assistent (Barra arrossegable) */}
+            <div
+              onMouseDown={handleMouseDown}
+              className={`flex items-center justify-between pb-3 border-b border-white/10 shrink-0 select-none ${
+                !isFullScreen ? 'cursor-move' : ''
+              }`}
+              title={!isFullScreen ? 'Fes clic i arrossega per moure la finestra' : ''}
+            >
               <div className="flex items-center gap-2.5">
                 <div className={`w-9 h-9 rounded-xl ${currentProfile.avatarBg} flex items-center justify-center text-white shadow-md`}>
                   <AssistantIcon type={currentProfile.iconType} size={18} />
@@ -438,6 +525,11 @@ export function KenzoAssistant() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-black text-white">{currentProfile.name} Assistant</h3>
                     <GlassBadge variant={appearance === 'kenza' ? 'purple' : appearance === 'core' ? 'emerald' : 'blue'} pulse>Online</GlassBadge>
+                    {!isFullScreen && (
+                      <span className="hidden sm:inline-flex items-center text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 gap-0.5">
+                        <GripHorizontal size={11} className="text-slate-400" /> Arrossega
+                      </span>
+                    )}
                   </div>
                   <p className="text-[10px] text-slate-400">
                     {currentProfile.role} &middot; DNI / ID: <span className="text-cyan-300 font-mono">48956602Z / Administrador</span>
@@ -446,7 +538,17 @@ export function KenzoAssistant() {
               </div>
 
               <div className="flex items-center gap-1 text-slate-400">
+                {/* Botó Minimitzar Ràpid */}
                 <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  title="Minimitzar ràpidament"
+                >
+                  <Minus size={15} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setIsFullScreen(!isFullScreen)}
                   className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   title={isFullScreen ? 'Reduir' : 'Pantalla completa'}
@@ -454,6 +556,7 @@ export function KenzoAssistant() {
                   {isFullScreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   title="Tancar"
