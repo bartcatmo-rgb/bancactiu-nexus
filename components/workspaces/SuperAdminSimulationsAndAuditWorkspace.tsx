@@ -256,13 +256,17 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Mòdul d'Auditoria Massiva i Simulació d'Estrès (5 Anys)
                 </h2>
-                <GlassBadge variant="emerald">ENS Nivell Alt</GlassBadge>
-                <GlassBadge variant="purple">Zero-Trust</GlassBadge>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm">
+                  ENS Nivell Alt
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-800 border border-purple-300 shadow-sm">
+                  Zero-Trust
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
                 Plataforma de proves de concurrència d'alta fidelitat, benchmark transaccional de PostgreSQL 16 i
                 projecció volumètrica sociosanitària a 5 anys (fins a 165.000 expedients PAO i 260 TPS pic).
               </p>
@@ -293,15 +297,15 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
 
       {/* BLOC 1: AUDITORIA MASSIVA GLOBAL PER A TOTS ELS TENANTS */}
       <GlassCard variant="default" className="p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-white/10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-cyan-400" />
-              <h3 className="text-lg font-bold text-white">
+              <Layers className="w-5 h-5 text-cyan-600" />
+              <h3 className="text-lg font-black text-slate-900">
                 Bloc 1: Auditoria Massiva Global de Tenants i Xarxa
               </h3>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Execució paral·lela de tests de capçaleres, integritat criptogràfica E2EE i latència de base de dades per a totes les subxarxes.
             </p>
           </div>
@@ -318,17 +322,17 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
 
         {/* Barra de Progrés en Temps Real */}
         {isMassiveRunning && (
-          <div className="my-4 p-4 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-2 animate-fadeIn">
+          <div className="my-4 p-4 rounded-xl bg-purple-50 border border-purple-200 border-l-4 border-l-purple-500 shadow-sm space-y-2 animate-fadeIn">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-purple-300 font-mono font-bold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+              <span className="text-purple-900 font-mono font-bold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-ping" />
                 {massiveStepMessage}
               </span>
-              <span className="text-cyan-300 font-mono font-bold">{massiveProgress}%</span>
+              <span className="text-cyan-800 font-mono font-bold">{massiveProgress}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-white/10">
+            <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden border border-purple-100">
               <div
-                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-400 transition-all duration-300 ease-out"
+                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 transition-all duration-300 ease-out"
                 style={{ width: `${massiveProgress}%` }}
               />
             </div>
@@ -339,27 +343,27 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
         {massiveResults && (
           <div className="mt-4 space-y-4 animate-fadeIn">
             {/* Targeta de Resum Global */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-purple-950/40 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 border-l-4 border-l-emerald-500 shadow-sm flex flex-wrap items-center justify-between gap-4 text-emerald-950">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600 border border-emerald-200 shrink-0">
                   <CheckCircle2 size={24} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">
+                  <h4 className="text-sm font-black text-slate-900">
                     {massiveResults.resumGlobal?.estatGeneral || 'ENS Nivell Alt Validat'}
                   </h4>
-                  <p className="text-xs text-slate-300">
-                    Compliment ENS: <strong className="text-emerald-300">100%</strong> · Zero-Trust: <strong className="text-cyan-300">Actiu</strong> · {massiveResults.tenantReports?.length} Tenants Verificats
+                  <p className="text-xs text-slate-600">
+                    Compliment ENS: <strong className="text-emerald-800 font-bold">100%</strong> · Zero-Trust: <strong className="text-cyan-800 font-bold">Actiu</strong> · {massiveResults.tenantReports?.length} Tenants Verificats
                   </p>
                   {(massiveResults as any).merkleRootHash && (
-                    <div className="mt-1 text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
-                      <Lock size={11} className="text-emerald-400" />
-                      <span>Merkle Root Hash: <strong className="text-cyan-300">{((massiveResults as any).merkleRootHash).slice(0, 16)}...</strong> (Bloc #{((massiveResults as any).merkleBlockIndex)})</span>
+                    <div className="mt-1 text-[10px] font-mono text-emerald-900 flex items-center gap-1.5 bg-white/80 px-2 py-0.5 rounded border border-emerald-200 w-fit">
+                      <Lock size={11} className="text-emerald-600" />
+                      <span>Merkle Root Hash: <strong className="text-cyan-800 font-bold">{((massiveResults as any).merkleRootHash).slice(0, 16)}...</strong> (Bloc #{((massiveResults as any).merkleBlockIndex)})</span>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="text-xs font-mono text-slate-400">
+              <div className="text-xs font-mono text-slate-500">
                 Data execució: {new Date(massiveResults.dataExecucio || '').toLocaleTimeString()}
               </div>
             </div>
@@ -369,32 +373,34 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
               {massiveResults.tenantReports?.map((report) => (
                 <div
                   key={report.tenantId}
-                  className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 hover:border-cyan-500/30 transition-all space-y-2.5"
+                  className="p-3.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-cyan-500 shadow-sm hover:shadow-md hover:border-cyan-400 transition-all space-y-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-white line-clamp-1">{report.tenantName}</div>
-                      <span className="text-[10px] font-mono text-slate-400">{report.badgeLabel}</span>
+                      <div className="text-xs font-bold text-slate-900 line-clamp-1">{report.tenantName}</div>
+                      <span className="text-[10px] font-mono text-slate-500">{report.badgeLabel}</span>
                     </div>
-                    <GlassBadge variant="emerald">OPTIMAL</GlassBadge>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm">
+                      OPTIMAL
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-white/5">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Latència PostgreSQL</span>
-                      <strong className="text-cyan-300 font-mono">{report.latenciaPostgresMs} ms</strong>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-slate-100">
+                    <div className="p-2 rounded-lg bg-cyan-50 border border-cyan-200">
+                      <span className="text-cyan-800 block text-[10px] font-medium">Latència PostgreSQL</span>
+                      <strong className="text-cyan-900 font-mono text-xs">{report.latenciaPostgresMs} ms</strong>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Xifratge E2EE</span>
-                      <strong className="text-emerald-300 font-mono">AES-256 OK</strong>
+                    <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                      <span className="text-emerald-800 block text-[10px] font-medium">Xifratge E2EE</span>
+                      <strong className="text-emerald-900 font-mono text-xs">AES-256 OK</strong>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Zero-Trust Headers</span>
-                      <strong className="text-purple-300 font-mono">HSTS & CSP OK</strong>
+                    <div className="p-2 rounded-lg bg-indigo-50 border border-indigo-200">
+                      <span className="text-indigo-800 block text-[10px] font-medium">Zero-Trust Headers</span>
+                      <strong className="text-indigo-900 font-mono text-xs">HSTS & CSP OK</strong>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Context Subnet</span>
-                      <strong className="text-amber-300 font-mono">Reconegut</strong>
+                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+                      <span className="text-amber-800 block text-[10px] font-medium">Context Subnet</span>
+                      <strong className="text-amber-900 font-mono text-xs">Reconegut</strong>
                     </div>
                   </div>
                 </div>
@@ -407,12 +413,12 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
       {/* BLOC 2: ESTUDI DE SIMULACIÓ PERSONALITZADA (A LA CARTA - FINS A 5 ANYS) */}
       <GlassCard variant="default" className="p-6">
         <div className="flex items-center gap-2 mb-2">
-          <Sliders className="w-5 h-5 text-purple-400" />
-          <h3 className="text-lg font-bold text-white">
+          <Sliders className="w-5 h-5 text-purple-600" />
+          <h3 className="text-lg font-black text-slate-900">
             Bloc 2: Estudi de Simulació Personalitzada d'Estrès (A la Carta)
           </h3>
         </div>
-        <p className="text-xs text-slate-300 mb-6">
+        <p className="text-xs text-slate-600 mb-6">
           Configura els paràmetres de concurrència, entitats seleccionades i projecció temporal de fins a 5 anys de creixement sostingut.
         </p>
 
@@ -420,11 +426,11 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Columna 1: Tenants Objectiu */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <Building2 size={14} className="text-purple-400" />
+            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Building2 size={14} className="text-purple-600" />
               1. Entitats Objectiu de la Prova
             </label>
-            <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/50 border border-white/10 max-h-56 overflow-y-auto">
+            <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200 max-h-56 overflow-y-auto">
               {availableTenants.map((t) => {
                 const isChecked = selectedTenants.includes(t.id);
                 return (
@@ -434,15 +440,15 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                     onClick={() => toggleTenant(t.id)}
                     className={`w-full text-left p-2 rounded-lg text-xs transition-all flex items-center justify-between border ${
                       isChecked
-                        ? 'bg-purple-900/30 border-purple-500/50 text-white'
-                        : 'bg-white/5 border-transparent text-slate-400 hover:text-slate-200'
+                        ? 'bg-purple-50 border-purple-300 border-l-4 border-l-purple-500 text-purple-950 font-semibold shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     <div>
                       <div className="font-semibold">{t.badge}</div>
-                      <div className="text-[10px] text-slate-400 line-clamp-1">{t.name}</div>
+                      <div className="text-[10px] text-slate-500 line-clamp-1">{t.name}</div>
                     </div>
-                    {isChecked && <Check size={14} className="text-purple-400 shrink-0" />}
+                    {isChecked && <Check size={14} className="text-purple-600 shrink-0" />}
                   </button>
                 );
               })}
@@ -451,11 +457,11 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
 
           {/* Columna 2: Rang Temporal de Simulació (Fins a 5 Anys) */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <Calendar size={14} className="text-cyan-400" />
+            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Calendar size={14} className="text-cyan-600" />
               2. Horitzó Temporal de Simulació
             </label>
-            <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-900/50 border border-white/10">
+            <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200">
               {[1, 2, 3, 4, 5].map((year) => {
                 const isSelected = simulationYears === year;
                 return (
@@ -465,12 +471,12 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                     onClick={() => setSimulationYears(year)}
                     className={`p-2.5 rounded-lg text-center transition-all flex flex-col items-center justify-center border ${
                       isSelected
-                        ? 'bg-cyan-600/40 border-cyan-400 text-white shadow-lg shadow-cyan-500/20'
-                        : 'bg-white/5 border-transparent text-slate-400 hover:text-white'
+                        ? 'bg-cyan-50 border-cyan-300 border-l-4 border-l-cyan-500 text-cyan-950 shadow-sm font-black'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     <span className="text-xs font-black">{year} Any{year > 1 ? 's' : ''}</span>
-                    <span className="text-[9px] text-slate-300 font-mono mt-0.5">
+                    <span className="text-[9px] text-slate-500 font-mono mt-0.5">
                       {year === 1 && '4.2k'}
                       {year === 2 && '19.8k'}
                       {year === 3 && '48.5k'}
@@ -481,18 +487,18 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                 );
               })}
             </div>
-            <p className="text-[11px] text-slate-400 leading-snug">
-              Projecció seleccionada: <strong className="text-cyan-300">{simulationYears} Anys</strong> de càrrega sintètica acumulada amb creixement volumètric.
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Projecció seleccionada: <strong className="text-cyan-800 font-bold">{simulationYears} Anys</strong> de càrrega sintètica acumulada amb creixement volumètric.
             </p>
           </div>
 
           {/* Columna 3: Suites de Test Específiques */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <Shield size={14} className="text-emerald-400" />
+            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Shield size={14} className="text-emerald-600" />
               3. Suites de Test Específiques
             </label>
-            <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-900/50 border border-white/10">
+            <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
               {availableSuites.map((s) => {
                 const isChecked = selectedSuites.includes(s.id);
                 return (
@@ -502,14 +508,14 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                     onClick={() => toggleSuite(s.id)}
                     className={`w-full text-left p-1.5 rounded-lg text-xs transition-all flex items-center justify-between border ${
                       isChecked
-                        ? 'bg-emerald-900/30 border-emerald-500/50 text-white'
-                        : 'bg-white/5 border-transparent text-slate-400 hover:text-slate-200'
+                        ? 'bg-emerald-50 border-emerald-300 border-l-4 border-l-emerald-500 text-emerald-950 font-semibold shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     <div>
                       <div className="font-semibold text-[11px]">{s.label}</div>
                     </div>
-                    {isChecked && <Check size={14} className="text-emerald-400 shrink-0" />}
+                    {isChecked && <Check size={14} className="text-emerald-600 shrink-0" />}
                   </button>
                 );
               })}
@@ -518,7 +524,7 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
         </div>
 
         {/* Botó d'Acció de Simulació */}
-        <div className="flex justify-end pt-3 border-t border-white/10">
+        <div className="flex justify-end pt-3 border-t border-slate-200">
           <GlassButton
             variant="primary"
             disabled={isCustomRunning}
@@ -533,18 +539,18 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
         {customResults && customResults.projections && (
           <div className="mt-6 space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-cyan-400" />
+              <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-cyan-600" />
                 Matriu de Projecció Volumètrica i Escalabilitat (1 a {customResults.simulationYears} Anys)
               </h4>
-              <span className="text-xs font-mono text-cyan-300">
+              <span className="text-xs font-mono font-bold text-cyan-800 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 shadow-sm">
                 Pic Màxim: {customResults.resumGlobal?.tpsMaximSoportat} TPS · Disc: {customResults.resumGlobal?.volumProjectatGb5Anys} GB
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-white/10 bg-slate-900/60">
-              <table className="w-full text-left text-xs text-slate-200">
-                <thead className="bg-white/5 text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/10">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-700 font-bold border-b border-slate-200">
                   <tr>
                     <th className="p-3">Horitzó</th>
                     <th className="p-3">Abast Geogràfic</th>
@@ -557,21 +563,29 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
                     <th className="p-3">Recomanació Arquitectura</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-slate-100">
                   {customResults.projections.map((p) => (
-                    <tr key={p.any} className="hover:bg-white/5 transition-colors">
-                      <td className="p-3 font-bold text-white flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <tr key={p.any} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-bold text-slate-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-cyan-500" />
                         Any {p.any}
                       </td>
-                      <td className="p-3 text-slate-300">{p.abast}</td>
-                      <td className="p-3 text-right font-mono font-bold text-cyan-300">{p.totalExpedients.toLocaleString()}</td>
-                      <td className="p-3 text-right font-mono text-purple-300">{p.usuarisActius.toLocaleString()}</td>
-                      <td className="p-3 text-right font-mono text-slate-300">{p.transaccionsMes.toLocaleString()}</td>
-                      <td className="p-3 text-right font-mono text-emerald-300 font-bold">{p.picTps}</td>
-                      <td className="p-3 text-right font-mono text-amber-300">{p.volumDadesGb} GB</td>
-                      <td className="p-3 text-right font-mono text-slate-300">{p.latenciaMitjanaMs} ms</td>
-                      <td className="p-3 text-[11px] text-slate-300 max-w-xs">{p.recomanacioArquitectura}</td>
+                      <td className="p-3 text-slate-600">{p.abast}</td>
+                      <td className="p-3 text-right font-mono font-bold text-cyan-800">{p.totalExpedients.toLocaleString()}</td>
+                      <td className="p-3 text-right font-mono font-semibold text-purple-800">{p.usuarisActius.toLocaleString()}</td>
+                      <td className="p-3 text-right font-mono text-slate-600">{p.transaccionsMes.toLocaleString()}</td>
+                      <td className="p-3 text-right">
+                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-mono font-bold shadow-sm">
+                          {p.picTps}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 font-mono font-bold shadow-sm">
+                          {p.volumDadesGb} GB
+                        </span>
+                      </td>
+                      <td className="p-3 text-right font-mono text-slate-600">{p.latenciaMitjanaMs} ms</td>
+                      <td className="p-3 text-[11px] text-slate-600 max-w-xs font-medium">{p.recomanacioArquitectura}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -579,10 +593,10 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
             </div>
 
             {/* Targeta de Recomanació Estratègica */}
-            <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-500/30 text-xs text-slate-300 flex items-start gap-3">
-              <Database className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 border-l-4 border-l-indigo-500 shadow-sm text-xs text-indigo-950 flex items-start gap-3">
+              <Database className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-white block mb-0.5">Dictamen Tècnic d'Escalabilitat:</strong>
+                <strong className="text-slate-900 font-bold block mb-0.5">Dictamen Tècnic d'Escalabilitat:</strong>
                 {customResults.resumGlobal?.recomanacioPrincipal}
               </div>
             </div>
