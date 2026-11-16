@@ -165,20 +165,20 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md my-auto">
-      <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6 backdrop-blur-2xl">
+      <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6 backdrop-blur-2xl bg-white/95">
         {/* Capçalera de la Targeta */}
         <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex p-2.5 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 mb-2 shadow-inner">
+          <div className="inline-flex p-2.5 rounded-2xl bg-gradient-to-br from-purple-50 to-cyan-50 border border-purple-200 mb-2 shadow-sm">
             {isFirstTimeSetup ? (
-              <Key className="w-6 h-6 sm:w-7 sm:h-7 text-amber-300 animate-pulse" />
+              <Key className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 animate-pulse" />
             ) : (
-              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-300" />
+              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600" />
             )}
           </div>
-          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             {isFirstTimeSetup ? 'Configuració Inicial de Clau' : 'Gateway Launcher Nexus'}
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
             {isFirstTimeSetup
               ? 'Definiu la contrasenya personal per al compte d\'administració'
               : 'Accés autenticat per a personal acreditat i governança perimetral'}
@@ -187,15 +187,15 @@ function LoginForm() {
 
         {/* Missatges d'estat */}
         {errorMsg && (
-          <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2">
-            <AlertCircle size={15} className="shrink-0 text-rose-400" />
+          <div className="mb-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0 text-rose-600" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2">
-            <CheckCircle2 size={15} className="shrink-0 text-emerald-400" />
+          <div className="mb-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+            <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -203,12 +203,12 @@ function LoginForm() {
         {/* VISTA 1: Formulari de Primer Inici (First-Time Password Setup) */}
         {isFirstTimeSetup ? (
           <form onSubmit={handleSetupPassword} autoComplete="off" data-lpignore="true" className="space-y-4">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200">
-              Usuari vinculat: <strong className="font-mono text-white">{targetDni || 'ADMINISTRADOR'}</strong>
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+              Usuari vinculat: <strong className="font-mono text-slate-900">{targetDni || 'ADMINISTRADOR'}</strong>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Nova Contrasenya Segura
               </label>
               <div className="relative">
@@ -220,12 +220,12 @@ function LoginForm() {
                   autoComplete="off"
                   data-lpignore="true"
                   placeholder="Introduïu una contrasenya robusta"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-slate-500 pr-10"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-400 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -233,7 +233,7 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Confirmació de la Contrasenya
               </label>
               <input
@@ -244,31 +244,31 @@ function LoginForm() {
                 autoComplete="off"
                 data-lpignore="true"
                 placeholder="Repetiu la contrasenya"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-slate-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-400"
               />
             </div>
 
             {/* Checklist de requisits de seguretat */}
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1.5 text-[11px]">
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {hasMinLength ? <Check size={13} className="text-emerald-400" /> : <X size={13} className="text-slate-500" />}
-                <span className={hasMinLength ? 'text-emerald-300' : ''}>Mínim 8 caràcters</span>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
+              <div className="flex items-center gap-1.5 text-slate-500">
+                {hasMinLength ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
+                <span className={hasMinLength ? 'text-emerald-700 font-semibold' : ''}>Mínim 8 caràcters</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {hasUpper && hasLower ? <Check size={13} className="text-emerald-400" /> : <X size={13} className="text-slate-500" />}
-                <span className={hasUpper && hasLower ? 'text-emerald-300' : ''}>Majúscules i minúscules (A-Z, a-z)</span>
+              <div className="flex items-center gap-1.5 text-slate-500">
+                {hasUpper && hasLower ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
+                <span className={hasUpper && hasLower ? 'text-emerald-700 font-semibold' : ''}>Majúscules i minúscules (A-Z, a-z)</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {hasNumber ? <Check size={13} className="text-emerald-400" /> : <X size={13} className="text-slate-500" />}
-                <span className={hasNumber ? 'text-emerald-300' : ''}>Com a mínim un número (0-9)</span>
+              <div className="flex items-center gap-1.5 text-slate-500">
+                {hasNumber ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
+                <span className={hasNumber ? 'text-emerald-700 font-semibold' : ''}>Com a mínim un número (0-9)</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {hasSpecial ? <Check size={13} className="text-emerald-400" /> : <X size={13} className="text-slate-500" />}
-                <span className={hasSpecial ? 'text-emerald-300' : ''}>Caràcter especial (!@#$%^&*)</span>
+              <div className="flex items-center gap-1.5 text-slate-500">
+                {hasSpecial ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
+                <span className={hasSpecial ? 'text-emerald-700 font-semibold' : ''}>Caràcter especial (!@#$%^&*)</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {passwordsMatch ? <Check size={13} className="text-emerald-400" /> : <X size={13} className="text-slate-500" />}
-                <span className={passwordsMatch ? 'text-emerald-300' : ''}>Les contrasenyes coincideixen</span>
+              <div className="flex items-center gap-1.5 text-slate-500">
+                {passwordsMatch ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
+                <span className={passwordsMatch ? 'text-emerald-700 font-semibold' : ''}>Les contrasenyes coincideixen</span>
               </div>
             </div>
 
@@ -289,7 +289,7 @@ function LoginForm() {
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className="w-full text-center text-xs text-slate-400 hover:text-white pt-2 transition-colors"
+              className="w-full text-center text-xs text-slate-500 hover:text-slate-800 pt-2 transition-colors"
             >
               ← Tornar a la pantalla d'inici de sessió
             </button>
@@ -298,14 +298,14 @@ function LoginForm() {
           /* VISTA 2: Formulari Estàndard d'Inici de Sessió (Sense Autofill) */
           <>
             {/* Selector de mètode: Credencials o Certificat */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-white/5 rounded-xl border border-white/10 mb-3 sm:mb-4">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-3 sm:mb-4">
               <button
                 type="button"
                 onClick={() => setAuthMode('credentials')}
                 className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'credentials'
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <KeyRound size={13} />
@@ -317,7 +317,7 @@ function LoginForm() {
                 className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'certificate'
                     ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Award size={13} />
@@ -328,7 +328,7 @@ function LoginForm() {
             {authMode === 'credentials' ? (
               <form onSubmit={(e) => handleLogin(e, 'credentials')} autoComplete="off" data-lpignore="true" className="space-y-3 sm:space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     DNI del Superadministrador
                   </label>
                   <input
@@ -339,19 +339,19 @@ function LoginForm() {
                     autoComplete="off"
                     data-lpignore="true"
                     placeholder="ex: 48956602Z o Administrador"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600 uppercase"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-400 uppercase"
                   />
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    Identificació per DNI (<span className="font-mono text-cyan-300">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-300">Administrador</span>)
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Identificació per DNI (<span className="font-mono text-cyan-700 font-semibold">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-700 font-semibold">Administrador</span>)
                   </p>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-medium text-slate-300">
+                    <label className="block text-xs font-semibold text-slate-700">
                       Clau d'Accés
                     </label>
-                    <span className="text-[10px] text-purple-300 font-mono">
+                    <span className="text-[10px] text-purple-700 font-mono font-semibold">
                       Nivell 5 Protegit
                     </span>
                   </div>
@@ -362,7 +362,7 @@ function LoginForm() {
                     autoComplete="off"
                     data-lpignore="true"
                     placeholder="Introdueixi la seva contrasenya"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -377,7 +377,7 @@ function LoginForm() {
                 </GlassButton>
 
                 {/* Opció per establir primer inici */}
-                <div className="pt-2 border-t border-white/10 text-center">
+                <div className="pt-2 border-t border-slate-100 text-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -386,7 +386,7 @@ function LoginForm() {
                       setErrorMsg(null);
                       setSuccessMsg('Configuració de primer accés. Definiu una nova contrasenya segura.');
                     }}
-                    className="text-xs text-amber-300 hover:text-amber-200 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
+                    className="text-xs text-amber-700 hover:text-amber-800 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
                   >
                     <Key size={12} />
                     Primer accés? Definiu la vostra contrasenya inicial
@@ -395,12 +395,12 @@ function LoginForm() {
               </form>
             ) : (
               <div className="space-y-3 text-center">
-                <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-left space-y-1.5">
-                  <div className="flex items-center gap-2 text-cyan-300 text-xs font-bold">
+                <div className="p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-left space-y-1.5">
+                  <div className="flex items-center gap-2 text-cyan-800 text-xs font-bold">
                     <FileCheck2 size={15} />
                     Certificats Digitals Oficials Admesos
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
                     Dispositius de signatura electrònica vàlids (idCAT, T-CAT corporatiu de Salut, DNI Electrònic o Cl@ve).
                   </p>
                 </div>
@@ -422,7 +422,7 @@ function LoginForm() {
       </GlassCard>
 
       {/* Avís Legal de Seguretat */}
-      <div className="mt-2.5 p-2 rounded-xl bg-slate-900/50 border border-white/5 backdrop-blur-md text-[9px] sm:text-[10px] text-slate-400 text-center leading-tight">
+      <div className="mt-2.5 p-2 rounded-xl bg-white/80 border border-slate-200 backdrop-blur-md text-[9px] sm:text-[10px] text-slate-500 text-center leading-tight shadow-sm">
         Sistema protegit per arquitectura Zero-Trust i registre d'auditoria continu (Llei 39/2015 i RGPD). Qualsevol accés no autoritzat serà bloquejat i auditat pel sistema perimetral.
       </div>
     </div>

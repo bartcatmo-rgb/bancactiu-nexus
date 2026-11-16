@@ -242,27 +242,27 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
       {isSuperAdminAuthorized && (
         <aside
           aria-label="Barra de Control SuperAdministrador"
-          className="sticky top-0 z-50 w-full border-b border-purple-500/30 bg-slate-950/85 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
+          className="sticky top-0 z-50 w-full border-b border-purple-200 bg-white/95 backdrop-blur-xl shadow-sm"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
             {/* Esquerra: Identitat SuperAdmin */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-lg border border-white/20">
-                <Shield className="w-4 h-4 text-purple-200" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-md border border-purple-200">
+                <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black tracking-tight text-white uppercase">
+                  <span className="text-xs font-black tracking-tight text-slate-900 uppercase">
                     Consola Exclusiva SuperAdmin
                   </span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
                     DNI / ID: {initialUser?.dni || '48956602Z'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <p className="text-[11px] text-slate-600 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>{initialUser?.name || "Marc Cachinero Baranda"} · Governança i Control Central</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200">
                     Centre: {tenantContext.shortName}
                   </span>
                 </p>
@@ -278,13 +278,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services');
                 }}
                 title="Gestió de perfils, serveis i llocs de treball"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'roles-services'
-                    ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
-                    : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
+                    ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-purple-500/10'
+                    : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
                 }`}
               >
-                <Users size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                <Users size={14} className="text-purple-600 group-hover:scale-110 transition-transform" />
                 <span>Gestió d'Usuaris i Rols</span>
               </button>
 
@@ -295,13 +295,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   setActiveWorkspace(activeWorkspace === 'simulations-audit' ? null : 'simulations-audit');
                 }}
                 title="Auditoria Massiva de Tenants i Simulació d'Estrès a 5 Anys"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'simulations-audit'
-                    ? 'bg-emerald-600/40 border-emerald-400 shadow-emerald-500/20'
-                    : 'bg-slate-900/80 hover:bg-emerald-900/30 border-white/10 hover:border-emerald-400/40'
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 shadow-emerald-500/10'
+                    : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200 hover:border-emerald-300'
                 }`}
               >
-                <Activity size={14} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                <Activity size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
                 <span>Auditoria & Estrès (5 Anys)</span>
               </button>
 
@@ -321,15 +321,15 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   }
                 }}
                 title="Estat de ciberseguretat militar i escàner de vulnerabilitats ENS (Requereix Doble Verificació)"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'security-lab'
-                    ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/20'
-                    : 'bg-slate-900/80 hover:bg-cyan-900/30 border-white/10 hover:border-cyan-400/40'
+                    ? 'bg-cyan-100 text-cyan-900 border-cyan-300 shadow-cyan-500/10'
+                    : 'bg-white hover:bg-cyan-50 text-slate-700 border-slate-200 hover:border-cyan-300'
                 }`}
               >
-                <Lock size={14} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                <Lock size={14} className="text-cyan-600 group-hover:scale-110 transition-transform" />
                 <span>Auditoria Zero-Trust</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">2FA</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 font-mono font-bold">2FA</span>
               </button>
 
               {/* Botó 3: Exportació Massiva de Dades Protegides (sota RGPD) */}
@@ -349,11 +349,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   );
                 }}
                 title="Exportació de dades sensibles protegida per doble verificació"
-                className="group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border bg-slate-900/80 hover:bg-emerald-900/30 border-white/10 hover:border-emerald-400/40"
+                className="group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border bg-white hover:bg-emerald-50 text-slate-700 border-slate-200 hover:border-emerald-300"
               >
-                <Download size={14} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                <Download size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
                 <span>Exportació Protegida</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">2FA</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold">2FA</span>
               </button>
 
               {/* Botó 2.5: Nou Préstamo Interactiv (FASE 1) */}
@@ -361,9 +361,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 type="button"
                 onClick={handleOpenNewLoanModal}
                 title="Alta interactiva de Nou Préstamo d'Ortopèdia Comunitària"
-                className="group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border bg-cyan-900/70 hover:bg-cyan-800/90 border-cyan-400/40 hover:border-cyan-400 shadow-cyan-950/30"
+                className="group px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow-sm border bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-cyan-500 shadow-cyan-500/15"
               >
-                <PackagePlus size={14} className="text-cyan-300 group-hover:scale-110 transition-transform" />
+                <PackagePlus size={14} className="text-white group-hover:scale-110 transition-transform" />
                 <span>Nou Préstamo</span>
               </button>
 
@@ -372,13 +372,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 type="button"
                 onClick={() => setActiveWorkspace(activeWorkspace === 'workshop-repairs' ? null : 'workshop-repairs')}
                 title="Taller Tècnic de Creu Roja i Reparacions d'Ajudes Tècniques"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'workshop-repairs'
-                    ? 'bg-rose-600/40 border-rose-400 shadow-rose-500/20'
-                    : 'bg-slate-900/80 hover:bg-rose-900/30 border-white/10 hover:border-rose-400/40'
+                    ? 'bg-rose-100 text-rose-900 border-rose-300 shadow-rose-500/10'
+                    : 'bg-white hover:bg-rose-50 text-slate-700 border-slate-200 hover:border-rose-300'
                 }`}
               >
-                <Wrench size={14} className="text-rose-400 group-hover:scale-110 transition-transform" />
+                <Wrench size={14} className="text-rose-600 group-hover:scale-110 transition-transform" />
                 <span>Taller Creu Roja</span>
               </button>
 
@@ -388,13 +388,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   type="button"
                   onClick={() => setActiveWorkspace(activeWorkspace === 'social-services' ? null : 'social-services')}
                   title="Espai de Gestió de Dependència, BVD, SAD i Teleassistència"
-                  className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                     activeWorkspace === 'social-services'
-                      ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
-                      : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
+                      ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-purple-500/10'
+                      : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
                   }`}
                 >
-                  <HeartHandshake size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                  <HeartHandshake size={14} className="text-purple-600 group-hover:scale-110 transition-transform" />
                   <span>Serveis Socials & Dependència</span>
                 </button>
               ) : (
@@ -405,32 +405,32 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     setActiveWorkspace('social-services');
                   }}
                   title="Mòdul desactivat per defecte. Clica per activar sota demanda."
-                  className="group px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-purple-300 transition-all flex items-center gap-1.5 border border-dashed border-purple-500/30 hover:border-purple-400/60 bg-purple-950/20"
+                  className="group px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-700 hover:bg-purple-100 transition-all flex items-center gap-1.5 border border-dashed border-purple-300 bg-purple-50"
                 >
-                  <HeartHandshake size={13} className="text-purple-400/60 group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px]">Serveis Socials (Activar)</span>
+                  <HeartHandshake size={13} className="text-purple-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px] font-semibold">Serveis Socials (Activar)</span>
                 </button>
               )}
 
               {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
-              <div className="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 shadow-sm">
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200 shadow-sm">
                 <button
                   type="button"
                   onClick={() => handleNavigateModule('bancactiu-social', 3003)}
                   title="Enllaç directe al mòdul Social (Banc del Temps i Xarxa Ciutadana)"
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-200 hover:text-white hover:bg-rose-600/30 transition-all flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-rose-50 transition-all flex items-center gap-1"
                 >
-                  <Share2 size={13} className="text-rose-400" />
+                  <Share2 size={13} className="text-rose-600" />
                   <span>Xarxa Social</span>
                 </button>
-                <span className="text-white/20">|</span>
+                <span className="text-slate-300">|</span>
                 <button
                   type="button"
                   onClick={() => handleNavigateModule('bancactiu-operatiu', 3004)}
                   title="Enllaç directe al mòdul Operatiu (Logística de Préstecs i Ortopèdia)"
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-200 hover:text-white hover:bg-blue-600/30 transition-all flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-blue-50 transition-all flex items-center gap-1"
                 >
-                  <Boxes size={13} className="text-blue-400" />
+                  <Boxes size={13} className="text-blue-600" />
                   <span>Gestió de Préstecs</span>
                 </button>
               </div>
@@ -440,9 +440,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             <div className="flex items-center gap-2">
               <Link
                 href="/docs"
-                className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-cyan-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-1.5"
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-cyan-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition-all flex items-center gap-1.5"
               >
-                <FileText size={13} className="text-cyan-400" />
+                <FileText size={13} className="text-cyan-600" />
                 <span>Manuals & PDFs</span>
               </Link>
             </div>
@@ -463,14 +463,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         />
 
         {/* FASE 2: BARRA DE SEPARACIÓ D'ACCESSOS PER ROLS OPERATIUS */}
-        <div className="my-2.5 p-2 sm:p-2.5 rounded-2xl bg-slate-950/80 border border-purple-500/30 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-2.5">
+        <div className="my-2.5 p-2 sm:p-2.5 rounded-2xl bg-white/95 border border-purple-200 backdrop-blur-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 pl-2">
-            <ShieldCheck size={16} className="text-purple-400 shrink-0" />
+            <ShieldCheck size={16} className="text-purple-600 shrink-0" />
             <div>
-              <span className="text-xs font-black tracking-wide text-white uppercase block">
+              <span className="text-xs font-black tracking-wide text-slate-900 uppercase block">
                 Separació d'Accessos per Rols Operatius:
               </span>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-500">
                 Pestanyes i visió del sistema adaptades per a cada rol d'intervenció
               </span>
             </div>
@@ -486,11 +486,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeRole === 'TECNIC_SALUT'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400 shadow-emerald-500/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-emerald-400/40'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-emerald-500/20'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-emerald-300'
               }`}
             >
-              <Stethoscope size={14} className={activeRole === 'TECNIC_SALUT' ? 'text-white' : 'text-emerald-400'} />
+              <Stethoscope size={14} className={activeRole === 'TECNIC_SALUT' ? 'text-white' : 'text-emerald-600'} />
               <span>Treballador del CAP</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">(Prescripció Mèdica)</span>
             </button>
@@ -504,11 +504,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeRole === 'VOLUNTARI'
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-400 shadow-amber-500/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-amber-400/40'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-500 shadow-amber-500/20'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-amber-300'
               }`}
             >
-              <HeartHandshake size={14} className={activeRole === 'VOLUNTARI' ? 'text-white' : 'text-amber-400'} />
+              <HeartHandshake size={14} className={activeRole === 'VOLUNTARI' ? 'text-white' : 'text-amber-600'} />
               <span>Voluntari / Entitat Veïnal</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">(Peticions i Suport)</span>
             </button>
@@ -523,11 +523,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeWorkspace === 'workshop-repairs' || activeRole === 'TERCER_SECTOR'
-                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-400 shadow-rose-500/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-rose-400/40'
+                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-500 shadow-rose-500/20'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-rose-300'
               }`}
             >
-              <Wrench size={14} className={activeWorkspace === 'workshop-repairs' ? 'text-white' : 'text-rose-400'} />
+              <Wrench size={14} className={activeWorkspace === 'workshop-repairs' ? 'text-white' : 'text-rose-600'} />
               <span>Centre de Reparació (Creu Roja)</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">(Gestió Tècnica)</span>
             </button>
@@ -545,11 +545,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeWorkspace === 'social-services' || activeRole === 'SERVEIS_SOCIALS'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-purple-500/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-purple-400/40'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-purple-500/20'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-purple-300'
               }`}
             >
-              <HeartHandshake size={14} className={activeWorkspace === 'social-services' ? 'text-white' : 'text-purple-400'} />
+              <HeartHandshake size={14} className={activeWorkspace === 'social-services' ? 'text-white' : 'text-purple-600'} />
               <span>Serveis Socials</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">
                 {moduleFlags.SOCIAL_SERVICES_ENABLED ? '(Dependència & PIA)' : '(Activar)'}
@@ -565,8 +565,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               }}
               className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                 activeRole === 'SUPERADMIN' && !activeWorkspace
-                  ? 'bg-purple-600/40 text-purple-200 border-purple-400'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
+                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
               }`}
             >
               SuperAdmin
@@ -577,18 +577,18 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         {/* Zona de Treball Dinàmica o Launchpad */}
         {!activeWorkspace ? (
           <main className="flex-1 my-3 sm:my-4 space-y-4 sm:space-y-6">
-            {/* Banner de Benvinguda i Ecosistema 2.0 */}
-            <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6">
+            {/* Banner de Benvinguda i Ecosistema 3.0 */}
+            <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6 bg-white/95">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight">
                       Panell Central de Comandament BancActiu Nexus
                     </h2>
                     <GlassBadge variant="emerald">Sessió Verificada</GlassBadge>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
                     Benvingut al nucli de governança institucional. Des d'aquest espai tens accés a l'auditoria forense, a l'alta descentralitzada de centres i serveis, a la simulació de concurrència d'alta escala (fins a 250.000 ciutadans i 5 anys) i a la consola de l'Enginyer Agent IA autònom.
                   </p>
                 </div>
@@ -671,17 +671,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 onClick={() => setActiveWorkspace('centres-onboarding')}
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-md border border-purple-200">
                     <Building2 className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Alta Descentralitzada de Centres
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Configuració i alta jeràrquica de CAPs, hospitals i entitats per cada gerència territorial.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-purple-700 pt-2 border-t border-slate-100">
                   <span>Gestionar Centres</span>
                   <ArrowRight size={14} />
                 </div>
@@ -695,17 +695,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 onClick={() => setActiveWorkspace('roles-services')}
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white mb-3 shadow-md border border-indigo-200">
                     <Users className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Rols, Serveis i Puestos
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Superadministració del catàleg de serveis, rols RBAC i estructura de llocs de treball.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-indigo-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-indigo-700 pt-2 border-t border-slate-100">
                   <span>Configurar Rols</span>
                   <ArrowRight size={14} />
                 </div>
@@ -726,17 +726,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 }
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-amber-600 to-emerald-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-amber-600 to-emerald-600 flex items-center justify-center text-white mb-3 shadow-md border border-emerald-200">
                     <Shield className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Stress & Security Lab
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Simulació de concurrència (fins a 250k ciutadans) i escaneig continu ENS (Score 99%).
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-700 pt-2 border-t border-slate-100">
                   <span>Obrir Lab (2FA)</span>
                   <ArrowRight size={14} />
                 </div>
@@ -750,17 +750,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 onClick={() => setActiveWorkspace('ai-agent')}
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-md border border-cyan-200">
                     <Bot className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Consola Enginyer Agent IA
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Modificacions a demanda mitjançant prompts en llenguatge natural amb generació de diff i auditoria.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-cyan-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-cyan-700 pt-2 border-t border-slate-100">
                   <span>Executar Agent</span>
                   <ArrowRight size={14} />
                 </div>
@@ -774,17 +774,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 onClick={() => setActiveWorkspace('workshop-repairs')}
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-pink-600 to-amber-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-pink-600 to-amber-600 flex items-center justify-center text-white mb-3 shadow-md border border-rose-200">
                     <Hammer className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Taller & Reparacions (Creu Roja)
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Gestió del cicle de vida d'avaries (Pendent, Taller, Verificació de Seguretat i Retorn a Estoc).
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-rose-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-rose-700 pt-2 border-t border-slate-100">
                   <span>Gestionar Taller</span>
                   <ArrowRight size={14} />
                 </div>
@@ -804,21 +804,21 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-md border border-white/20">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-md border border-purple-200">
                       <HeartHandshake className="w-5 h-5" />
                     </div>
                     <GlassBadge variant={moduleFlags.SOCIAL_SERVICES_ENABLED ? "purple" : "slate"}>
                       {moduleFlags.SOCIAL_SERVICES_ENABLED ? "Actiu" : "Activable sota demanda"}
                     </GlassBadge>
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                     Serveis Socials & Dependència
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">
                     Gestió d'expedients de dependència, barems BVD (escala 64 punts), PIAs, SAD i teleassistència municipal.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-bold text-purple-700 pt-2 border-t border-slate-100">
                   <span>{moduleFlags.SOCIAL_SERVICES_ENABLED ? "Gestionar Dependència" : "Activar Mòdul Sota Demanda"}</span>
                   <ArrowRight size={14} />
                 </div>
@@ -826,13 +826,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             </div>
 
             {/* Launcher Embolicat per saltar a altres aplicacions */}
-            <div className="mt-6 pt-3 border-t border-white/10">
+            <div className="mt-6 pt-3 border-t border-slate-200">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Grid size={16} className="text-cyan-400" />
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Grid size={16} className="text-cyan-600" />
                   Ecosistema de Micro-Aplicacions BancActiu 3.0
                 </h3>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   Base de Dades Compartida (@bancactiu/db)
                 </span>
               </div>
@@ -881,7 +881,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             )}
 
             {activeWorkspace === 'centres-onboarding' && (
-              <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 backdrop-blur-xl">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <GerenciaOnboardingWorkspace
                   onClose={() => setActiveWorkspace(null)}
                 />
@@ -889,7 +889,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             )}
 
             {activeWorkspace === 'roles-services' && (
-              <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 backdrop-blur-xl">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <SuperAdminRolesAndServicesWorkspace
                   onClose={() => setActiveWorkspace(null)}
                   onShowToast={(type, title, msg) => showToast(title, msg)}
@@ -932,7 +932,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         </GlassModal>
 
         {/* Peu de pàgina institucional neutre i dinàmic */}
-        <footer className="mt-6 pt-3 border-t border-white/10 text-center text-xs text-slate-500">
+        <footer className="mt-6 pt-3 border-t border-slate-200 text-center text-xs text-slate-500">
           BancActiu Nexus 3.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; {tenantContext.isDefault ? "Arquitectura Distribuïda i Zero-Trust" : tenantContext.name}
         </footer>
         {/* Assistent Flotant Kenzo AI */}
@@ -940,11 +940,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
         {/* Notificació Toast de Seguretat ENS Nivell Alt */}
         {notificationToast && (
-          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-slate-950/95 border border-emerald-500/50 shadow-2xl backdrop-blur-2xl flex items-center gap-3 animate-fadeIn text-white max-w-md">
-            <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
+          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-white/95 border border-emerald-500 shadow-xl backdrop-blur-xl flex items-center gap-3 animate-fadeIn text-slate-900 max-w-md">
+            <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
             <div>
-              <h4 className="text-xs font-bold text-emerald-300">{notificationToast.title}</h4>
-              <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">{notificationToast.message}</p>
+              <h4 className="text-xs font-bold text-emerald-800">{notificationToast.title}</h4>
+              <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{notificationToast.message}</p>
             </div>
           </div>
         )}

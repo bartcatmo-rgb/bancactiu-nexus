@@ -73,7 +73,7 @@ const PROFILES: Record<AppearanceProfile, ProfileMeta> = {
     accentText: 'text-cyan-300',
     chatBadge: 'Kenzo AI',
     iconType: 'masculine',
-    greetingText: "Hola, Mireia Valls. Sóc en Kenzo, l'assistent executiu d'intel·ligència artificial i ciberseguretat de BancActiu Nexus 2.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
+    greetingText: "Hola, Mireia Valls. Sóc en Kenzo, l'assistent executiu d'intel·ligència artificial i ciberseguretat de BancActiu Nexus 3.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
   },
   kenza: {
     id: 'kenza',
@@ -89,7 +89,7 @@ const PROFILES: Record<AppearanceProfile, ProfileMeta> = {
     accentText: 'text-rose-300',
     chatBadge: 'Kenza AI',
     iconType: 'feminine',
-    greetingText: "Hola, Mireia Valls. Sóc la Kenza, l'assistenta executiva d'intel·ligència artificial i coordinació institucional de BancActiu Nexus 2.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
+    greetingText: "Hola, Mireia Valls. Sóc la Kenza, l'assistenta executiva d'intel·ligència artificial i coordinació institucional de BancActiu Nexus 3.0. Puc auditar el monorepo, analitzar les mètriques dels 4 mòduls o projectar la presentació executiva de diapositives."
   },
   core: {
     id: 'core',
@@ -512,7 +512,7 @@ export function KenzoAssistant() {
             {/* Capçalera de l'assistent (Barra arrossegable) */}
             <div
               onMouseDown={handleMouseDown}
-              className={`flex items-center justify-between pb-3 border-b border-white/10 shrink-0 select-none ${
+              className={`flex items-center justify-between pb-3 border-b border-slate-200 shrink-0 select-none ${
                 !isFullScreen ? 'cursor-move' : ''
               }`}
               title={!isFullScreen ? 'Fes clic i arrossega per moure la finestra' : ''}
@@ -523,16 +523,16 @@ export function KenzoAssistant() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-black text-white">{currentProfile.name} Assistant</h3>
+                    <h3 className="text-sm font-black text-slate-900">{currentProfile.name} Assistant</h3>
                     <GlassBadge variant={appearance === 'kenza' ? 'purple' : appearance === 'core' ? 'emerald' : 'blue'} pulse>Online</GlassBadge>
                     {!isFullScreen && (
-                      <span className="hidden sm:inline-flex items-center text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 gap-0.5">
+                      <span className="hidden sm:inline-flex items-center text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 gap-0.5">
                         <GripHorizontal size={11} className="text-slate-400" /> Arrossega
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    {currentProfile.role} &middot; DNI / ID: <span className="text-cyan-300 font-mono">48956602Z / Administrador</span>
+                  <p className="text-[10px] text-slate-500">
+                    {currentProfile.role} &middot; DNI / ID: <span className="text-cyan-700 font-mono font-semibold">48956602Z / Administrador</span>
                   </p>
                 </div>
               </div>
@@ -542,7 +542,7 @@ export function KenzoAssistant() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  className="p-1.5 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                   title="Minimitzar ràpidament"
                 >
                   <Minus size={15} />
@@ -550,7 +550,7 @@ export function KenzoAssistant() {
                 <button
                   type="button"
                   onClick={() => setIsFullScreen(!isFullScreen)}
-                  className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  className="p-1.5 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                   title={isFullScreen ? 'Reduir' : 'Pantalla completa'}
                 >
                   {isFullScreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
@@ -558,7 +558,7 @@ export function KenzoAssistant() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  className="p-1.5 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                   title="Tancar"
                 >
                   <X size={16} />
@@ -567,18 +567,18 @@ export function KenzoAssistant() {
             </div>
 
             {/* Selector d'Aparència Interactiu (Kenzo, Kenza, Kenz Core) */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 rounded-xl border border-white/10 shrink-0 my-2">
-              <div className="flex items-center gap-1.5 text-slate-300 font-semibold text-[11px]">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100/90 rounded-xl border border-slate-200 shrink-0 my-2">
+              <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-[11px]">
                 <Palette size={13} className={currentProfile.accentText} />
                 <span>Aparença:</span>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/40 border border-white/5">
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white border border-slate-200 shadow-sm">
                 <button
                   onClick={() => handleSelectAppearance('kenzo')}
                   className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
                     appearance === 'kenzo'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                   title="Kenzo: Aparença masculina / Executiu"
                 >
@@ -589,8 +589,8 @@ export function KenzoAssistant() {
                   onClick={() => handleSelectAppearance('kenza')}
                   className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
                     appearance === 'kenza'
-                      ? 'bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                   title="Kenza: Aparença femenina / Executiva"
                 >
@@ -601,8 +601,8 @@ export function KenzoAssistant() {
                   onClick={() => handleSelectAppearance('core')}
                   className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1.5 ${
                     appearance === 'core'
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                   title="Kenz Core: Aparença neutra / Hologràfica tecnològica"
                 >
@@ -613,13 +613,13 @@ export function KenzoAssistant() {
             </div>
 
             {/* Pestañes de Funcionalitat */}
-            <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-xl border border-white/10 mb-3 shrink-0">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-3 shrink-0">
               <button
                 onClick={() => setActiveTab('audit')}
                 className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                   activeTab === 'audit'
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Shield size={12} />
@@ -630,7 +630,7 @@ export function KenzoAssistant() {
                 className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                   activeTab === 'metrics'
                     ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Activity size={12} />

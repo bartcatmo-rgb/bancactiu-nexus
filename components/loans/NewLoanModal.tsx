@@ -144,53 +144,53 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto custom-scrollbar bg-slate-900/95 border border-cyan-500/40 rounded-2xl shadow-2xl p-4 sm:p-6 text-white relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto custom-scrollbar bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-900 relative">
         {/* Botó de tancament */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
+          className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer"
           aria-label="Tancar formulari"
         >
           <X size={18} />
         </button>
 
         {/* Capçalera del Modal */}
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
+        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
             <PackagePlus className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                 Alta de Nou Préstec d'Ortopèdia Comunitària
               </h2>
               <GlassBadge variant="blue">Core Operatiu</GlassBadge>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Registre de lliurament immediat amb traçabilitat per codi QR i consentiment digital.
             </p>
           </div>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2">
-            <AlertCircle size={16} className="shrink-0 text-rose-400" />
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0 text-rose-600" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Secció 1: Dades del Beneficiari */}
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-3">
-            <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <h3 className="text-xs font-bold text-cyan-700 uppercase tracking-wider flex items-center gap-1.5">
               <User size={14} /> 1. Dades del Ciutadà / Beneficiari
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Nom i Cognoms *
                 </label>
                 <div className="relative">
@@ -201,13 +201,13 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                     placeholder="Ex: Mercè Rodoreda Gurgui"
                     value={ciutada}
                     onChange={(e) => setCiutada(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   DNI / NIE o CIP CatSalut *
                 </label>
                 <div className="relative">
@@ -218,13 +218,13 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                     placeholder="Ex: 47891234X / RODO0230491"
                     value={dniCip}
                     onChange={(e) => setDniCip(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 uppercase focus:outline-none focus:border-cyan-400"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 uppercase focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Telèfon de Contacte
                 </label>
                 <div className="relative">
@@ -234,7 +234,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                     placeholder="Ex: 612 345 678"
                     value={telefon}
                     onChange={(e) => setTelefon(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -242,20 +242,20 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
           </div>
 
           {/* Secció 2: Material i Identificador QR */}
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-3">
-            <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <h3 className="text-xs font-bold text-cyan-700 uppercase tracking-wider flex items-center gap-1.5">
               <QrCode size={14} /> 2. Material Sol·licitat i Identificador d'Estoc
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Tipus de Material Ortopèdic *
                 </label>
                 <select
                   value={material}
                   onChange={(e) => handleMaterialChange(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-500 cursor-pointer"
                 >
                   {MATERIALS_CATALOG.map((mat) => (
                     <option key={mat.id} value={mat.nom}>
@@ -266,22 +266,22 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Identificador QR / Codi de Barres
                 </label>
                 <div className="relative">
-                  <QrCode size={13} className="absolute left-3 top-2.5 text-cyan-400" />
+                  <QrCode size={13} className="absolute left-3 top-2.5 text-cyan-600" />
                   <input
                     type="text"
                     value={codiQR}
                     onChange={(e) => setCodiQR(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-cyan-500/40 rounded-xl text-xs font-mono font-bold text-cyan-300 focus:outline-none focus:border-cyan-400"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-cyan-400 rounded-xl text-xs font-mono font-bold text-cyan-800 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Centre d'Origen / CAP Prescriptor
                 </label>
                 <div className="relative">
@@ -289,7 +289,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                   <select
                     value={centreOrigen}
                     onChange={(e) => setCentreOrigen(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-500 cursor-pointer"
                   >
                     {CENTRES_CATALOG.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -301,31 +301,31 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
           </div>
 
           {/* Secció 3: Dates i Terminis */}
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-3">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-cyan-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar size={14} /> 3. Període de Préstec
               </h3>
               <div className="flex items-center gap-1 text-[10px]">
-                <span className="text-slate-400">Ràpid:</span>
+                <span className="text-slate-500 font-medium">Ràpid:</span>
                 <button
                   type="button"
                   onClick={() => handleQuickDuration(30)}
-                  className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 transition"
+                  className="px-2 py-0.5 rounded bg-slate-200/80 hover:bg-slate-300 text-slate-700 font-semibold transition"
                 >
                   30d
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDuration(60)}
-                  className="px-1.5 py-0.5 rounded bg-cyan-600/40 text-cyan-200 font-bold border border-cyan-500/30 transition"
+                  className="px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 font-bold border border-cyan-300 transition"
                 >
                   60d
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDuration(90)}
-                  className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 transition"
+                  className="px-2 py-0.5 rounded bg-slate-200/80 hover:bg-slate-300 text-slate-700 font-semibold transition"
                 >
                   90d
                 </button>
@@ -334,31 +334,31 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Data d'Inici (Lliurament)
                 </label>
                 <input
                   type="date"
                   value={dataInici}
                   onChange={(e) => setDataInici(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Data Prevista de Retorn
                 </label>
                 <input
                   type="date"
                   value={retorn}
                   onChange={(e) => setRetorn(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950/70 border border-cyan-500/40 rounded-xl text-xs text-cyan-300 font-bold focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-1.5 bg-white border border-cyan-400 rounded-xl text-xs text-cyan-800 font-bold focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                   Observacions / Indicacions Clíniques (Opcional)
                 </label>
                 <textarea
@@ -366,31 +366,31 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                   placeholder="Ex: Pacient intervingut de pròtesi de maluc al mes de novembre. Es programa revisió de seguretat a les 4 setmanes."
                   value={observacions}
                   onChange={(e) => setObservacions(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950/70 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Secció 4: Consentiment i idCAT Mòbil */}
-          <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/20 flex items-start gap-2.5">
+          <div className="p-3 rounded-xl bg-cyan-50/70 border border-cyan-200 flex items-start gap-2.5">
             <input
               type="checkbox"
               id="idcat-check"
               checked={signaturaIdCat}
               onChange={(e) => setSignaturaIdCat(e.target.checked)}
-              className="mt-0.5 rounded border-white/20 text-cyan-500 focus:ring-cyan-400"
+              className="mt-0.5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
             />
-            <label htmlFor="idcat-check" className="text-xs text-slate-300 cursor-pointer">
-              <span className="font-semibold text-white">Verificació d'Identitat i idCAT Mòbil / Signatura Digital</span>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+            <label htmlFor="idcat-check" className="text-xs text-slate-700 cursor-pointer">
+              <span className="font-bold text-slate-900">Verificació d'Identitat i idCAT Mòbil / Signatura Digital</span>
+              <p className="text-[10px] text-slate-500 mt-0.5">
                 El ciutadà accepta expressament les condicions de custòdia responsable del material ortopèdic i el tractament de dades sota RGPD i ENS Nivell Alt.
               </p>
             </label>
           </div>
 
           {/* Accions del Modal */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-200">
             <GlassButton
               type="button"
               variant="secondary"
