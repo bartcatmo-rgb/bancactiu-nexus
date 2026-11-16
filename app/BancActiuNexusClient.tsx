@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Shield,
@@ -212,7 +212,43 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     }
   }, [initialUser]);
 
+  const isInternalAppSwitching = useRef(false);
+
+  // FASE 1: Destrucció Automàtica de Sessió al Tancar Pestanya o Finestra (Beacon API / beforeunload / pagehide)
+  useEffect(() => {
+    const handleTabOrWindowClose = () => {
+      if (isInternalAppSwitching.current) return;
+
+      try {
+        // Enviar senyal de destrucció de sessió al servidor de forma asíncrona no bloquejant
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          navigator.sendBeacon('/api/auth/logout');
+        } else {
+          fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+        }
+
+        // Invalida la cookie localment de manera síncrona
+        document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
+
+        // Netejar emmagatzematge de sessió
+        sessionStorage.clear();
+        localStorage.removeItem('bancactiu_session_cache');
+      } catch (e) {
+        console.warn('[SESSION-DESTRUCTION] Error en tancar pestanya:', e);
+      }
+    };
+
+    window.addEventListener('pagehide', handleTabOrWindowClose);
+    window.addEventListener('beforeunload', handleTabOrWindowClose);
+
+    return () => {
+      window.removeEventListener('pagehide', handleTabOrWindowClose);
+      window.removeEventListener('beforeunload', handleTabOrWindowClose);
+    };
+  }, []);
+
   const handleNavigateModule = (appId: string, defaultPort: number) => {
+    isInternalAppSwitching.current = true;
     const targetUrl = resolveAppTargetUrl(appId, defaultPort);
     window.location.href = targetUrl;
   };
@@ -223,7 +259,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     } catch {
       // fallback
     }
-    document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
+    sessionStorage.clear();
+    localStorage.removeItem('bancactiu_session_cache');
     window.location.href = '/login';
   };
 
@@ -232,6 +270,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
       setIsLauncherOpen(false);
       return;
     }
+    isInternalAppSwitching.current = true;
     // Resolució intel·ligent d'URL: Localhost amb ports vs Vercel Cloud amb rutes relatives/dominis
     const targetUrl = resolveAppTargetUrl(app.id, app.port);
     window.location.href = targetUrl;

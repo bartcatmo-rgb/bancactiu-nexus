@@ -7,6 +7,13 @@ export async function POST() {
   });
 
   response.cookies.delete('bancactiu_session');
+  response.cookies.set({
+    name: 'bancactiu_session',
+    value: '',
+    path: '/',
+    expires: new Date(0),
+    maxAge: 0,
+  });
   return response;
 }
 
@@ -17,5 +24,12 @@ export async function GET() {
   });
 
   response.cookies.delete('bancactiu_session');
+  response.cookies.set({
+    name: 'bancactiu_session',
+    value: '',
+    path: '/',
+    expires: new Date(0),
+    maxAge: 0,
+  });
   return response;
 }

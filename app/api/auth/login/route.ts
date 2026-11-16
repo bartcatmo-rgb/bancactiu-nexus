@@ -138,7 +138,6 @@ export async function POST(request: Request) {
       httpOnly: false,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 8
     });
 
     // Registre immutable Merkle de l'inici de sessió per credencials
