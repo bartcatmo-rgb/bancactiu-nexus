@@ -54,6 +54,7 @@ import { SocialServicesWorkspace } from '@/components/workspaces/SocialServicesW
 import { NewLoanModal, NewLoanData } from '@/components/loans/NewLoanModal';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
+import { INSTITUTIONAL_MODULE_FLAGS, isModuleActive } from '@/lib/modules-feature-flags';
 
 interface BancActiuNexusClientProps {
   initialUser?: {
@@ -73,6 +74,18 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   const [activeRole, setActiveRole] = useState(initialUser?.role || 'SUPERADMIN');
   const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
   const handleOpenNewLoanModal = () => setIsNewLoanModalOpen(true);
+  const [moduleFlags, setModuleFlags] = useState<Record<string, boolean>>(INSTITUTIONAL_MODULE_FLAGS);
+
+  const toggleModuleFlag = (moduleId: string) => {
+    setModuleFlags(prev => {
+      const updated = { ...prev, [moduleId]: !prev[moduleId] };
+      showToast(
+        updated[moduleId] ? "Mòdul Activat Sota Demanda" : "Mòdul Desactivat",
+        `El mòdul ${moduleId} ara està ${updated[moduleId] ? "ACTIU" : "INACTIU"}.`
+      );
+      return updated;
+    });
+  };
 
   // Context dinàmic de Tenant (IP & Host resolution)
   const [tenantContext, setTenantContext] = useState<{
@@ -369,20 +382,35 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span>Taller Creu Roja</span>
               </button>
 
-              {/* Botó 2.7: Serveis Socials & Dependència (FASE 2) */}
-              <button
-                type="button"
-                onClick={() => setActiveWorkspace(activeWorkspace === 'social-services' ? null : 'social-services')}
-                title="Espai de Gestió de Dependència, BVD, SAD i Teleassistència"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
-                  activeWorkspace === 'social-services'
-                    ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
-                    : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
-                }`}
-              >
-                <HeartHandshake size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
-                <span>Serveis Socials & Dependència</span>
-              </button>
+              {/* Botó 2.7: Serveis Socials & Dependència (Feature Flag) */}
+              {moduleFlags.SOCIAL_SERVICES_ENABLED ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveWorkspace(activeWorkspace === 'social-services' ? null : 'social-services')}
+                  title="Espai de Gestió de Dependència, BVD, SAD i Teleassistència"
+                  className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                    activeWorkspace === 'social-services'
+                      ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
+                      : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
+                  }`}
+                >
+                  <HeartHandshake size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span>Serveis Socials & Dependència</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleModuleFlag('SOCIAL_SERVICES_ENABLED');
+                    setActiveWorkspace('social-services');
+                  }}
+                  title="Mòdul desactivat per defecte. Clica per activar sota demanda."
+                  className="group px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-purple-300 transition-all flex items-center gap-1.5 border border-dashed border-purple-500/30 hover:border-purple-400/60 bg-purple-950/20"
+                >
+                  <HeartHandshake size={13} className="text-purple-400/60 group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px]">Serveis Socials (Activar)</span>
+                </button>
+              )}
 
               {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
               <div className="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 shadow-sm">
@@ -508,9 +536,12 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             <button
               type="button"
               onClick={() => {
+                if (!moduleFlags.SOCIAL_SERVICES_ENABLED) {
+                  setModuleFlags(prev => ({ ...prev, SOCIAL_SERVICES_ENABLED: true }));
+                }
                 setActiveRole('SERVEIS_SOCIALS');
                 setActiveWorkspace('social-services');
-                showToast("Rol Actiu: Serveis Socials (Dependència)", "Gestió d'expedients BVD (64 punts), assignació de SAD, teleassistència i PIAs.");
+                showToast("Rol Actiu: Serveis Socials (Dependència)", "Mòdul activat sota demanda. Gestió d'expedients BVD (64 punts), SAD i PIAs.");
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeWorkspace === 'social-services' || activeRole === 'SERVEIS_SOCIALS'
@@ -520,7 +551,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             >
               <HeartHandshake size={14} className={activeWorkspace === 'social-services' ? 'text-white' : 'text-purple-400'} />
               <span>Serveis Socials</span>
-              <span className="text-[10px] opacity-80 hidden lg:inline">(Dependència & PIA)</span>
+              <span className="text-[10px] opacity-80 hidden lg:inline">
+                {moduleFlags.SOCIAL_SERVICES_ENABLED ? '(Dependència & PIA)' : '(Activar)'}
+              </span>
             </button>
 
             {/* Rol SuperAdmin Global */}
@@ -757,16 +790,26 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 </div>
               </GlassCard>
 
-              {/* Mòdul 6: Serveis Socials & Dependència (FASE 2) */}
+              {/* Mòdul 6: Serveis Socials & Dependència (FASE 2 & Feature Flag) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
                 className="p-4 sm:p-5 flex flex-col justify-between"
-                onClick={() => setActiveWorkspace('social-services')}
+                onClick={() => {
+                  if (!moduleFlags.SOCIAL_SERVICES_ENABLED) {
+                    toggleModuleFlag('SOCIAL_SERVICES_ENABLED');
+                  }
+                  setActiveWorkspace('social-services');
+                }}
               >
                 <div>
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
-                    <HeartHandshake className="w-5 h-5" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-md border border-white/20">
+                      <HeartHandshake className="w-5 h-5" />
+                    </div>
+                    <GlassBadge variant={moduleFlags.SOCIAL_SERVICES_ENABLED ? "purple" : "slate"}>
+                      {moduleFlags.SOCIAL_SERVICES_ENABLED ? "Actiu" : "Activable sota demanda"}
+                    </GlassBadge>
                   </div>
                   <h3 className="text-sm sm:text-base font-bold text-white mb-1">
                     Serveis Socials & Dependència
@@ -776,7 +819,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
-                  <span>Gestionar Dependència</span>
+                  <span>{moduleFlags.SOCIAL_SERVICES_ENABLED ? "Gestionar Dependència" : "Activar Mòdul Sota Demanda"}</span>
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
