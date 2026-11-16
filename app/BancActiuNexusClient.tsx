@@ -39,6 +39,7 @@ import {
 import { sharedDb } from '@bancactiu/db';
 import { resolveAppTargetUrl, isProductionEnvironment } from '@/lib/navigation';
 import { SuperAdminStressAndSecurityLabWorkspace } from '@/components/workspaces/SuperAdminStressAndSecurityLabWorkspace';
+import { SuperAdminSimulationsAndAuditWorkspace } from '@/components/workspaces/SuperAdminSimulationsAndAuditWorkspace';
 import { SuperAdminAiAgentWorkspace } from '@/components/workspaces/SuperAdminAiAgentWorkspace';
 import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnboardingWorkspace';
 import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/SuperAdminRolesAndServicesWorkspace';
@@ -264,6 +265,23 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span>Gestió d'Usuaris i Rols</span>
               </button>
 
+              {/* Botó 1.5: Mòdul d'Auditoria Massiva i Simulació d'Estrès (5 Anys) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveWorkspace(activeWorkspace === 'simulations-audit' ? null : 'simulations-audit');
+                }}
+                title="Auditoria Massiva de Tenants i Simulació d'Estrès a 5 Anys"
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'simulations-audit'
+                    ? 'bg-emerald-600/40 border-emerald-400 shadow-emerald-500/20'
+                    : 'bg-slate-900/80 hover:bg-emerald-900/30 border-white/10 hover:border-emerald-400/40'
+                }`}
+              >
+                <Activity size={14} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span>Auditoria & Estrès (5 Anys)</span>
+              </button>
+
               {/* Botó 2: Auditoria Zero-Trust (Accés explícit al laboratori d'auditoria/paràmetres de xarxa) */}
               <button
                 type="button"
@@ -396,6 +414,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </Link>
                   <GlassButton
                     variant="primary"
+                    onClick={() => setActiveWorkspace('simulations-audit')}
+                    icon={<Activity size={16} />}
+                  >
+                    Auditoria & Estrès (5 Anys)
+                  </GlassButton>
+                  <GlassButton
+                    variant="primary"
                     onClick={() =>
                       requestSensitiveAction(
                         'AUDIT_LAB_NETWORK',
@@ -404,7 +429,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                         () => setActiveWorkspace('security-lab')
                       )
                     }
-                    icon={<Activity size={16} />}
+                    icon={<Shield size={16} />}
                   >
                     Stress & Security Lab (2FA)
                   </GlassButton>
@@ -569,6 +594,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
             {activeWorkspace === 'interoperability' && (
               <SuperAdminInteroperabilityWorkspace onClose={() => setActiveWorkspace(null)} />
+            )}
+
+            {activeWorkspace === 'simulations-audit' && (
+              <SuperAdminSimulationsAndAuditWorkspace
+                onClose={() => setActiveWorkspace(null)}
+                adminDni={initialUser?.dni || '48956602Z'}
+                onShowToast={(title, msg) => showToast(title, msg)}
+              />
             )}
 
             {activeWorkspace === 'security-lab' && (
