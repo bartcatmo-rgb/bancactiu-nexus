@@ -50,6 +50,7 @@ import { GerenciaOnboardingWorkspace } from '@/components/workspaces/GerenciaOnb
 import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/SuperAdminRolesAndServicesWorkspace';
 import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/SuperAdminInteroperabilityWorkspace';
 import { WorkshopAndRepairsWorkspace } from '@/components/workspaces/WorkshopAndRepairsWorkspace';
+import { SocialServicesWorkspace } from '@/components/workspaces/SocialServicesWorkspace';
 import { NewLoanModal, NewLoanData } from '@/components/loans/NewLoanModal';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
@@ -368,6 +369,21 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span>Taller Creu Roja</span>
               </button>
 
+              {/* Botó 2.7: Serveis Socials & Dependència (FASE 2) */}
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace(activeWorkspace === 'social-services' ? null : 'social-services')}
+                title="Espai de Gestió de Dependència, BVD, SAD i Teleassistència"
+                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'social-services'
+                    ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
+                    : 'bg-slate-900/80 hover:bg-purple-900/30 border-white/10 hover:border-purple-400/40'
+                }`}
+              >
+                <HeartHandshake size={14} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                <span>Serveis Socials & Dependència</span>
+              </button>
+
               {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
               <div className="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 shadow-sm">
                 <button
@@ -486,6 +502,25 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <Wrench size={14} className={activeWorkspace === 'workshop-repairs' ? 'text-white' : 'text-rose-400'} />
               <span>Centre de Reparació (Creu Roja)</span>
               <span className="text-[10px] opacity-80 hidden lg:inline">(Gestió Tècnica)</span>
+            </button>
+
+            {/* Rol 4: Serveis Socials & Dependència (FASE 2) */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('SERVEIS_SOCIALS');
+                setActiveWorkspace('social-services');
+                showToast("Rol Actiu: Serveis Socials (Dependència)", "Gestió d'expedients BVD (64 punts), assignació de SAD, teleassistència i PIAs.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeWorkspace === 'social-services' || activeRole === 'SERVEIS_SOCIALS'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-purple-500/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-purple-400/40'
+              }`}
+            >
+              <HeartHandshake size={14} className={activeWorkspace === 'social-services' ? 'text-white' : 'text-purple-400'} />
+              <span>Serveis Socials</span>
+              <span className="text-[10px] opacity-80 hidden lg:inline">(Dependència & PIA)</span>
             </button>
 
             {/* Rol SuperAdmin Global */}
@@ -721,6 +756,30 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
+
+              {/* Mòdul 6: Serveis Socials & Dependència (FASE 2) */}
+              <GlassCard
+                variant="interactive"
+                glowColor="purple"
+                className="p-4 sm:p-5 flex flex-col justify-between"
+                onClick={() => setActiveWorkspace('social-services')}
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white mb-3 shadow-md border border-white/20">
+                    <HeartHandshake className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                    Serveis Socials & Dependència
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                    Gestió d'expedients de dependència, barems BVD (escala 64 punts), PIAs, SAD i teleassistència municipal.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
+                  <span>Gestionar Dependència</span>
+                  <ArrowRight size={14} />
+                </div>
+              </GlassCard>
             </div>
 
             {/* Launcher Embolicat per saltar a altres aplicacions */}
@@ -800,6 +859,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
             {activeWorkspace === 'workshop-repairs' && (
               <WorkshopAndRepairsWorkspace
+                onClose={() => setActiveWorkspace(null)}
+                onShowToast={(title, msg) => showToast(title, msg)}
+              />
+            )}
+
+            {activeWorkspace === 'social-services' && (
+              <SocialServicesWorkspace
                 onClose={() => setActiveWorkspace(null)}
                 onShowToast={(title, msg) => showToast(title, msg)}
               />
