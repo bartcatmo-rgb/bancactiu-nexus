@@ -27,6 +27,7 @@ import {
   GlassButton,
   GlassBadge
 } from '@bancactiu/ui-glass';
+import { isIdCatMovilEnabled } from '@/lib/feature-flags';
 
 function LoginForm() {
   const router = useRouter();
@@ -34,8 +35,31 @@ function LoginForm() {
   const rawRedirect = searchParams.get('redirect');
   const redirectPath = rawRedirect && rawRedirect !== '/login' && !rawRedirect.startsWith('/login') ? rawRedirect : '/';
 
-  // Mode d'autenticació: credentials / certificate
+  // Mode d'autenticació: credentials / certificate (idCAT Mòbil)
   const [authMode, setAuthMode] = useState<'credentials' | 'certificate'>('credentials');
+
+  // Feature Flag: idCAT Mòbil (AOC) desactivat per defecte (isIdCatMovilEnabled = false)
+  const [idCatMovilActive, setIdCatMovilActive] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    // Lectura del feature flag des de magatzem o paràmetre d'activació
+    if (typeof window !== 'undefined') {
+      const active = isIdCatMovilEnabled();
+      setIdCatMovilActive(active);
+
+      // Escoltar canvis dinàmics en temps real (ex. activat des de SuperAdmin)
+      const handleFlagChange = () => {
+        const updated = isIdCatMovilEnabled();
+        setIdCatMovilActive(updated);
+        if (!updated) {
+          setAuthMode('credentials');
+        }
+      };
+
+      window.addEventListener('bancactiu_feature_flags_changed', handleFlagChange);
+      return () => window.removeEventListener('bancactiu_feature_flags_changed', handleFlagChange);
+    }
+  }, []);
 
   // Neteja imperativa d'estat residual en carregar /login (Elimina vulnerabilitat d'autologin)
   React.useEffect(() => {
@@ -335,35 +359,37 @@ function LoginForm() {
         ) : (
           /* VISTA 2: Formulari Estàndard d'Inici de Sessió (Sense Autofill) */
           <>
-            {/* Selector de mètode: Credencials o Certificat */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-3 sm:mb-4">
-              <button
-                type="button"
-                onClick={() => setAuthMode('credentials')}
-                className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  authMode === 'credentials'
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <KeyRound size={13} />
-                DNI / Clau
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthMode('certificate')}
-                className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  authMode === 'certificate'
-                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Award size={13} />
-                idCAT / T-CAT
-              </button>
-            </div>
+            {/* Selector de mètode: Únicament visible si el Feature Flag idCAT Mòbil està activat des de SuperAdmin */}
+            {idCatMovilActive && (
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-3 sm:mb-4 animate-fadeIn">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('credentials')}
+                  className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    authMode === 'credentials'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <KeyRound size={13} />
+                  DNI / Clau
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('certificate')}
+                  className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    authMode === 'certificate'
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Award size={13} />
+                  idCAT Mòbil / AOC
+                </button>
+              </div>
+            )}
 
-            {authMode === 'credentials' ? (
+            {!idCatMovilActive || authMode === 'credentials' ? (
               <form onSubmit={(e) => handleLogin(e, 'credentials')} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" data-form-type="other" className="space-y-3 sm:space-y-3.5">
                 {/* Dummy decoy inputs per desorientar el gestor de contrasenyes del navegador */}
                 <input type="text" name="fakeusernameremembered" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
@@ -452,14 +478,14 @@ function LoginForm() {
                 </div>
               </form>
             ) : (
-              <div className="space-y-3 text-center">
+              <div className="space-y-3 text-center animate-fadeIn">
                 <div className="p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-left space-y-1.5">
                   <div className="flex items-center gap-2 text-cyan-800 text-xs font-bold">
                     <FileCheck2 size={15} />
-                    Certificats Digitals Oficials Admesos
+                    Autenticació idCAT Mòbil & Certificats AOC
                   </div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Dispositius de signatura electrònica vàlids (idCAT, T-CAT corporatiu de Salut, DNI Electrònic o Cl@ve).
+                    Identitat digital corporativa mitjançant idCAT Mòbil (Consorci AOC), T-CAT de Salut, DNI Electrònic o Cl@ve de l'Administració Pública.
                   </p>
                 </div>
 
@@ -471,7 +497,7 @@ function LoginForm() {
                   className="w-full justify-center py-2"
                   icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
                 >
-                  {isLoading ? 'Autenticant via Certificat...' : 'Validar Certificat Digital'}
+                  {isLoading ? 'Autenticant via idCAT Mòbil...' : 'Validar Identitat via AOC / idCAT'}
                 </GlassButton>
               </div>
             )}

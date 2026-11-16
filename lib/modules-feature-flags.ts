@@ -12,6 +12,9 @@ export interface SystemModuleConfig {
 }
 
 export const INSTITUTIONAL_MODULE_FLAGS: Record<string, boolean> = {
+  // Mòdul d'Integració idCAT Mòbil (AOC): Desactivat per defecte a l'espera de validació del conveni i certificat de segell
+  IDCAT_MOVIL_ENABLED: false,
+
   // Mòdul de Serveis Socials i Dependència: Present al codi però desactivat per defecte (activable sota demanda)
   SOCIAL_SERVICES_ENABLED: false,
 
@@ -23,6 +26,13 @@ export const INSTITUTIONAL_MODULE_FLAGS: Record<string, boolean> = {
 };
 
 export const SYSTEM_MODULES_CATALOG: SystemModuleConfig[] = [
+  {
+    id: 'IDCAT_MOVIL_ENABLED',
+    name: 'idCAT Mòbil (Consorci AOC)',
+    description: 'Autenticació ciutadana via OTP/SMS del Consorci AOC (requereix conveni institucional).',
+    enabledByDefault: false,
+    category: 'administrative',
+  },
   {
     id: 'SOCIAL_SERVICES_ENABLED',
     name: 'Serveis Socials & Expedients de Dependència',

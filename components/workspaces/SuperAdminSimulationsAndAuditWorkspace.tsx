@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   Shield,
@@ -25,9 +25,15 @@ import {
   Calendar,
   Database,
   BarChart3,
-  FileCheck
+  FileCheck,
+  Globe,
+  KeyRound,
+  ShieldCheck,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { GlassCard, GlassButton, GlassBadge } from '@bancactiu/ui-glass';
+import { isIdCatMovilEnabled, setIdCatMovilEnabled } from '@/lib/feature-flags';
 
 interface SuperAdminSimulationsAndAuditWorkspaceProps {
   onClose: () => void;
@@ -101,6 +107,29 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
     simulationYears?: number;
     dataExecucio?: string;
   } | null>(null);
+
+  // Estat del Feature Flag d'idCAT Mòbil (AOC)
+  const [idCatMovilActive, setIdCatMovilActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIdCatMovilActive(isIdCatMovilEnabled());
+    }
+  }, []);
+
+  const handleToggleIdCatMovil = () => {
+    const nextState = !idCatMovilActive;
+    setIdCatMovilActive(nextState);
+    setIdCatMovilEnabled(nextState);
+    if (onShowToast) {
+      onShowToast(
+        nextState ? 'idCAT Mòbil Habilitat' : 'idCAT Mòbil Desactivat',
+        nextState
+          ? "S'ha activat la passarel·la d'idCAT Mòbil (Consorci AOC). Ara serà visible al selector de la pantalla de login."
+          : "S'ha desactivat idCAT Mòbil. La pantalla de login queda restringida exclusivament a DNI i Contrasenya."
+      );
+    }
+  };
 
   const availableTenants = [
     { id: 'tenant-default', name: 'BancActiu 3.0 Enterprise (Neutre)', code: 'BANCACTIU_ENTERPRISE', badge: 'Plataforma Institucional' },
@@ -602,6 +631,185 @@ export const SuperAdminSimulationsAndAuditWorkspace: React.FC<SuperAdminSimulati
             </div>
           </div>
         )}
+      </GlassCard>
+
+      {/* BLOC 3: PARÀMETRES I INTEGRACIONS OFICIALS (CONSORCI AOC & CATSALUT) */}
+      <GlassCard variant="default" className="p-6">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-indigo-600" />
+            <div>
+              <h3 className="text-lg font-black text-slate-900">
+                Bloc 3: Paràmetres i Integracions Oficials de Governança
+              </h3>
+              <p className="text-xs text-slate-600">
+                Control centralitzat de passarel·les d'identitat digital, convenis interadministratius i segells electrònics.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+            ENS Nivell Alt · Interoperabilitat AOC
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Targeta 1: idCAT Mòbil (Consorci AOC) - Control Feature Flag Actiu/Inactiu */}
+          <div className={`p-4 rounded-xl border transition-all ${
+            idCatMovilActive
+              ? 'bg-emerald-50/70 border-emerald-300 border-l-4 border-l-emerald-500 shadow-sm'
+              : 'bg-amber-50/70 border-amber-300 border-l-4 border-l-amber-500 shadow-sm'
+          }`}>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-lg ${idCatMovilActive ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                  <KeyRound size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">idCAT Mòbil (Consorci AOC)</h4>
+                  <span className="text-[10px] text-slate-500 font-mono">Passarel·la Ciutadana OTP/SMS</span>
+                </div>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                idCatMovilActive
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-amber-100 text-amber-800 border-amber-300'
+              }`}>
+                {idCatMovilActive ? 'Actiu' : 'Inactiu (Pendent Conveni)'}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+              Autenticació oficial mitjançant telèfon mòbil i DNI per a ciutadania i usuaris de serveis comunitaris.
+            </p>
+
+            <div className="space-y-1.5 text-[11px] bg-white/80 p-2.5 rounded-lg border border-slate-200 mb-3">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Estat Conveni:</span>
+                <strong className={idCatMovilActive ? 'text-emerald-700' : 'text-amber-700'}>
+                  {idCatMovilActive ? 'Conveni Vigent AOC-CatSalut' : 'A l\'espera de validació del conveni'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Segell Electrònic:</span>
+                <strong className={idCatMovilActive ? 'text-emerald-700' : 'text-amber-700'}>
+                  {idCatMovilActive ? 'Certificat EC-ACC Validat' : 'Pendent de certificat de segell'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Visibilitat Login:</span>
+                <strong className={idCatMovilActive ? 'text-emerald-700' : 'text-slate-500'}>
+                  {idCatMovilActive ? 'Visible a /login' : 'Amagat (Només DNI/Contrasenya)'}
+                </strong>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleToggleIdCatMovil}
+              className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
+                idCatMovilActive
+                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
+              }`}
+            >
+              {idCatMovilActive ? (
+                <>
+                  <ToggleRight size={16} className="text-rose-600" />
+                  Desactivar idCAT Mòbil a Login
+                </>
+              ) : (
+                <>
+                  <ToggleLeft size={16} className="text-white" />
+                  Habilitar idCAT Mòbil (Pilot / Validació)
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Targeta 2: Certificats Digitals Qualificats (T-CAT / DNIe) */}
+          <div className="p-4 rounded-xl border bg-cyan-50/70 border-cyan-300 border-l-4 border-l-cyan-500 shadow-sm">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-cyan-100 text-cyan-800">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">idCAT Certificat / T-CAT</h4>
+                  <span className="text-[10px] text-slate-500 font-mono">Dispositiu Criptogràfic QSCD</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-cyan-100 text-cyan-800 border-cyan-300">
+                Actiu (Producció)
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+              Autenticació per a facultatius mèdics, direccions de CAP i administradors de sistemes de salut.
+            </p>
+
+            <div className="space-y-1.5 text-[11px] bg-white/80 p-2.5 rounded-lg border border-slate-200 mb-3">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Entitat Emissora:</span>
+                <strong className="text-cyan-800">EC-ACC (Generalitat de Catalunya)</strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Nivell Seguretat:</span>
+                <strong className="text-cyan-800">Substancial / Alt (eIDAS)</strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Validació OCSP:</span>
+                <strong className="text-emerald-700">En línia (Temps real)</strong>
+              </div>
+            </div>
+
+            <div className="w-full py-2 px-3 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-600" />
+              Passarel·la Qualificada Connectada
+            </div>
+          </div>
+
+          {/* Targeta 3: Passarel·la Via Oberta / Dependència */}
+          <div className="p-4 rounded-xl border bg-purple-50/70 border-purple-300 border-l-4 border-l-purple-500 shadow-sm">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-purple-100 text-purple-800">
+                  <Globe size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Via Oberta (Consorci AOC)</h4>
+                  <span className="text-[10px] text-slate-500 font-mono">Intercanvi Dades Interadministratiu</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-purple-100 text-purple-800 border-purple-300">
+                Actiu (Auditat)
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+              Consulta de dades d'empadronament i graus de dependència sota consentiment o interès públic RGPD.
+            </p>
+
+            <div className="space-y-1.5 text-[11px] bg-white/80 p-2.5 rounded-lg border border-slate-200 mb-3">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Xifratge Transmissió:</span>
+                <strong className="text-purple-800">TLS 1.3 / AES-256 GCM</strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Traça Forense:</span>
+                <strong className="text-purple-800">Arbre Merkle SHA-256</strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Protecció Dades:</span>
+                <strong className="text-emerald-700">Emmascarament Dinàmic</strong>
+              </div>
+            </div>
+
+            <div className="w-full py-2 px-3 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-600" />
+              Endpoint Homologat per Governança
+            </div>
+          </div>
+        </div>
       </GlassCard>
     </div>
   );
