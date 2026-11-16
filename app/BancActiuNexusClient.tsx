@@ -55,6 +55,7 @@ import { NewLoanModal, NewLoanData } from '@/components/loans/NewLoanModal';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
 import { INSTITUTIONAL_MODULE_FLAGS, isModuleActive } from '@/lib/modules-feature-flags';
+import { SessionLockManager } from '@/components/security/SessionLockManager';
 
 interface BancActiuNexusClientProps {
   initialUser?: {
@@ -236,8 +237,29 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     window.location.href = targetUrl;
   };
 
+  const handleSessionReauthenticate = async (pass: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/reauthenticate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dni: initialUser?.dni || '48956602Z',
+          password: pass,
+          actionName: 'SESSION_UNLOCK',
+          actionDetails: 'Desbloqueig de sessió per inactivitat de 5 minuts (ENS Nivell Alt)',
+          module: 'bancactiu-nexus'
+        })
+      });
+      const data = await res.json();
+      return !!data.success;
+    } catch {
+      return false;
+    }
+  };
+
   return (
-    <RadialAuraBackground variant="nexus" className="min-h-screen w-full flex flex-col overflow-y-auto">
+    <SessionLockManager onReauthenticate={handleSessionReauthenticate}>
+      <RadialAuraBackground variant="nexus" className="min-h-screen w-full flex flex-col overflow-y-auto">
       {/* 1. Barra Superior Exclusiva de Superadministrador */}
       {isSuperAdminAuthorized && (
         <aside
@@ -979,5 +1001,6 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         />
       </div>
     </RadialAuraBackground>
+    </SessionLockManager>
   );
 }
