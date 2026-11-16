@@ -476,8 +476,8 @@ export default function BancActiuLoginPage() {
   const tenant = useTenantContext();
 
   return (
-    <RadialAuraBackground variant="nexus" className="h-screen w-screen overflow-hidden">
-      <div className="h-full w-full max-h-screen overflow-hidden flex flex-col justify-between p-3 sm:p-5 select-none">
+    <RadialAuraBackground variant="nexus" className="min-h-screen w-full overflow-x-hidden overflow-y-auto">
+      <div className="min-h-screen w-full flex flex-col justify-between p-3 sm:p-5 select-none overflow-y-auto custom-scrollbar">
         {/* Capçalera d'accés institucional dinàmica */}
         <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-2 sm:pb-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
@@ -517,7 +517,7 @@ export default function BancActiuLoginPage() {
         </header>
 
         {/* Zona Central amb Suspense boundary */}
-        <main className="flex-1 flex items-center justify-center py-1 sm:py-2 overflow-hidden">
+        <main className="flex-1 flex items-center justify-center py-4 my-auto w-full">
           <Suspense fallback={
             <div className="text-slate-700 text-sm animate-pulse flex items-center gap-2">
               <Shield className="w-5 h-5 text-purple-600 animate-spin" />

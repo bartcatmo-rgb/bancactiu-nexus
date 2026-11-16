@@ -449,7 +449,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           </div>
         </aside>
       )}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 md:p-6 flex flex-col justify-between">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 md:p-6 flex flex-col min-h-0">
         {/* Capçalera institucional Glassmorphism amb acció de Tancar Sessió */}
         <GlassHeader
           appName="BancActiu Nexus (Consola SuperAdmin)"
@@ -846,7 +846,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           </main>
         ) : (
           /* Sub-workspaces estancs */
-          <main className="flex-1 my-4 max-h-[85vh] overflow-y-auto custom-scrollbar pr-1">
+          <main className="flex-1 my-4 w-full overflow-y-auto custom-scrollbar pr-1">
             <div className="flex justify-between items-center mb-4">
               <GlassButton
                 variant="secondary"

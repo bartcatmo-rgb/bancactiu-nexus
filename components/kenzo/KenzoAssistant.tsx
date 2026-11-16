@@ -661,7 +661,7 @@ export function KenzoAssistant() {
             </div>
 
             {/* Contingut Dinàmic segons Pestaña */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[260px]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-3 min-h-[260px]">
               {/* PESTANYA 1: AUDITORIA DE SISTEMES */}
               {activeTab === 'audit' && (
                 <div className="space-y-3">

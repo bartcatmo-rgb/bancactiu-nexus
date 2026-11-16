@@ -464,7 +464,7 @@ export const GerenciaOnboardingWorkspace: React.FC<GerenciaOnboardingWorkspacePr
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 text-slate-800 flex flex-col overflow-hidden font-sans">
+    <div className="fixed inset-0 z-50 bg-slate-50 text-slate-800 flex flex-col overflow-y-auto custom-scrollbar font-sans">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {/* ===================================================================== */}

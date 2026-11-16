@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ca" suppressHydrationWarning>
-      <body className="antialiased min-h-screen bg-slate-950 text-slate-100" suppressHydrationWarning>
+      <body className="antialiased min-h-screen w-full bg-slate-50 text-slate-900 overflow-x-hidden overflow-y-auto" suppressHydrationWarning>
         <Script id="bancactiu-init" strategy="beforeInteractive">
           {`
             window.__BANCACTIU_APP__ = "bancactiu-nexus";
