@@ -1,4 +1,5 @@
 import type { ManagedRole } from '@/types/demo-user';
+import { verifyPassword } from '@/lib/crypto-security';
 export type Profile = ManagedRole;
 
 export interface SystemUser {
@@ -35,6 +36,22 @@ export interface PasswordValidationResult {
 }
 
 export const INITIAL_SYSTEM_USERS: SystemUser[] = [
+  {
+    id: 'user-admin-institucional',
+    username: 'Administrador',
+    dni: 'ADMINISTRADOR',
+    email: 'administrador@esteveterrades.cat',
+    nombre: 'Administrador Institucional (Docent)',
+    rol: 'SUPER_ADMIN',
+    workplace: 'Consola Central TI · Institut Esteve Terrades i Illa',
+    defaultEntity: 'ALL',
+    avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+    initials: 'AD',
+    currentPassword: '1234',
+    mustChangePassword: true,
+    lastPasswordChangeDate: new Date().toISOString(),
+    passwordHistory: ['1234'],
+  },
   {
     id: 'user-superadmin-52622304y',
     username: '52622304Y',
@@ -245,7 +262,11 @@ export function validatePasswordSecurity(
 
   // Comprova les últimes 10 contrasenyes guardades a l'historial
   const last10 = history.slice(-10);
-  const isNotInHistory = !last10.includes(cleanPass);
+  const matchesPrevious = last10.some((prevHash) => {
+    if (!prevHash) return false;
+    return verifyPassword(cleanPass, prevHash);
+  });
+  const isNotInHistory = !matchesPrevious;
 
   if (!hasMinLength) {
     errors.push('La contrasenya ha de tenir un mínim de 8 caràcters.');
@@ -260,7 +281,7 @@ export function validatePasswordSecurity(
     errors.push(`Ha de contenir com a mínim 2 símbols obligatoris (ex: @, #, $, !, %, &, *). Actualment en té: ${symbolCount}.`);
   }
   if (!isNotInHistory) {
-    errors.push('Per política de seguretat de l’ICS, no podeu reutilitzar cap de les 10 últimes contrasenyes.');
+    errors.push('La nova contrasenya no pot ser igual a cap de les darreres 10 contrasenyes utilitzades.');
   }
 
   return {

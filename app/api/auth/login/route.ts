@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 import { verifyPassword } from '@/lib/crypto-security';
-import { getServerUsers } from '@/lib/server-credentials-store';
+import { getServerUsers, matchesIdentifier } from '@/lib/server-credentials-store';
 
 export async function POST(request: Request) {
   try {
@@ -93,17 +93,14 @@ export async function POST(request: Request) {
     // Sincronitzar amb el magatzem segur persistent del servidor per evitar pèrdua d'estat en serverless cold-starts
     try {
       const serverUsers = getServerUsers();
-      const sUser = serverUsers.find(
-        (u) =>
-          u.dni.toUpperCase() === userRecord.dni.toUpperCase() ||
-          u.username.toUpperCase() === userRecord.dni.toUpperCase() ||
-          (userRecord.id === 'Administrador' && (u.username.toUpperCase().includes('ADMIN') || u.id.toLowerCase().includes('admin')))
-      );
-      if (sUser && sUser.mustChangePassword === false && sUser.currentPassword) {
-        userRecord.passwordHash = sUser.currentPassword;
-        userRecord.mustChangePassword = false;
-        userRecord.isFirstLogin = false;
-        if (sUser.passwordHistory) {
+      const sUser = serverUsers.find((u) => matchesIdentifier(u, lookupTarget));
+      if (sUser) {
+        if (sUser.currentPassword) {
+          userRecord.passwordHash = sUser.currentPassword;
+        }
+        userRecord.mustChangePassword = sUser.mustChangePassword;
+        userRecord.isFirstLogin = sUser.mustChangePassword;
+        if (sUser.passwordHistory && Array.isArray(sUser.passwordHistory)) {
           userRecord.passwordHistory = sUser.passwordHistory;
         }
       }
@@ -112,10 +109,25 @@ export async function POST(request: Request) {
     }
 
     const attemptPassword = (password || '').trim();
-    const hasConfiguredPassword = Boolean(userRecord.passwordHash && userRecord.passwordHash !== '1234');
+    const hasConfiguredPassword = Boolean(
+      userRecord.passwordHash &&
+      userRecord.passwordHash !== '1234' &&
+      userRecord.mustChangePassword === false
+    );
 
     // Cas 1: Usuari amb contrasenya definitiva ja establerta (NO bucle de setup)
-    if (hasConfiguredPassword && userRecord.mustChangePassword === false && userRecord.isFirstLogin === false) {
+    if (hasConfiguredPassword) {
+      // Si intenta accedir amb el provisional '1234', ha de quedar COMPLETAMENT INVALIDAT
+      if (attemptPassword === '1234') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}. La clau provisional 1234 ha quedat invalidada.`
+          },
+          { status: 401 }
+        );
+      }
+
       const isCorrect = verifyPassword(attemptPassword, userRecord.passwordHash!);
       if (!isCorrect) {
         return NextResponse.json(
@@ -129,36 +141,22 @@ export async function POST(request: Request) {
       // Contrasenya vàlida -> sessió autoritzada directament
     } else {
       // Cas 2: Primer inici o requeriment de canvi de clau
-      if (userRecord.mustChangePassword || userRecord.isFirstLogin || !hasConfiguredPassword) {
-        const isInitialMatch = Boolean(
-          !attemptPassword || 
-          attemptPassword === '1234' || 
-          (userRecord.passwordHash && (attemptPassword === userRecord.passwordHash || verifyPassword(attemptPassword, userRecord.passwordHash)))
-        );
+      const isInitialMatch = Boolean(
+        !attemptPassword || 
+        attemptPassword === '1234' || 
+        (userRecord.passwordHash && verifyPassword(attemptPassword, userRecord.passwordHash))
+      );
 
-        if (isInitialMatch) {
-          return NextResponse.json({
-            success: true,
-            requirePasswordSetup: true,
-            dni: userRecord.dni,
-            userId: userRecord.id,
-            name: userRecord.nomComplet,
-            message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
-          });
-        } else {
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`
-            },
-            { status: 401 }
-          );
-        }
-      }
-
-      // Verificació estàndard de hash
-      const isCorrect = verifyPassword(attemptPassword, userRecord.passwordHash || '');
-      if (!isCorrect) {
+      if (isInitialMatch) {
+        return NextResponse.json({
+          success: true,
+          requirePasswordSetup: true,
+          dni: userRecord.dni,
+          userId: userRecord.id,
+          name: userRecord.nomComplet,
+          message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
+        });
+      } else {
         return NextResponse.json(
           {
             success: false,

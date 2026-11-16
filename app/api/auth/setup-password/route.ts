@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { hashPassword, verifyPassword } from '@/lib/crypto-security';
-import { saveUserPasswordDirect } from '@/lib/server-credentials-store';
+import { getServerUsers, matchesIdentifier, saveUserPasswordDirect } from '@/lib/server-credentials-store';
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +62,30 @@ export async function POST(request: Request) {
     const history: string[] = Array.isArray(user.passwordHistory) ? [...user.passwordHistory] : [];
     if (user.passwordHash && !history.includes(user.passwordHash)) {
       history.unshift(user.passwordHash);
+    }
+
+    try {
+      const serverUsers = getServerUsers();
+      const sUser = serverUsers.find((u) => matchesIdentifier(u, normalizedDni));
+      if (sUser) {
+        if (sUser.currentPassword && !history.includes(sUser.currentPassword)) {
+          history.unshift(sUser.currentPassword);
+        }
+        if (Array.isArray(sUser.passwordHistory)) {
+          for (const h of sUser.passwordHistory) {
+            if (h && !history.includes(h)) {
+              history.push(h);
+            }
+          }
+        }
+      }
+    } catch {
+      // Fallback a dades en memòria
+    }
+
+    // Invalida que es pugui reutilitzar el "1234" provisional com a nova contrasenya
+    if (!history.includes('1234')) {
+      history.push('1234');
     }
 
     const matchesPrevious = history.slice(0, 10).some((prevHash) => {

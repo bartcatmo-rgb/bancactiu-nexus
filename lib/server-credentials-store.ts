@@ -1,7 +1,7 @@
 /**
- * Magatzem de Persistència de Credencials al Servidor / Backend (Render / Node.js)
- * Assegura que la contrasenya del Superadministrador (52622304Y) i resta d'usuaris
- * persisteixi al servidor de forma xifrada (PBKDF2 SHA-512) segons RGPD / LOPDGDD 3/2018.
+ * Magatzem de Persistència de Credencials al Servidor / Backend (Render / Node.js / Vercel Serverless)
+ * Assegura que la contrasenya del Superadministrador (52622304Y), Administrador institucional
+ * i resta d'usuaris persisteixi de forma immutable i xifrada (PBKDF2 SHA-512) segons RGPD / ENS Nivell Alt.
  */
 
 import fs from 'fs';
@@ -11,25 +11,43 @@ import type { SystemUser } from '@/lib/auth-security';
 import { INITIAL_SYSTEM_USERS, validatePasswordSecurity } from '@/lib/auth-security';
 import { hashPassword, verifyPassword } from '@/lib/crypto-security';
 
-// Determina el fitxer de dades privat al servidor amb fallback a /tmp en entorns serverless (Vercel)
-function getDbFilePath(): string {
-  const primaryDir = path.join(process.cwd(), 'data');
-  const primaryFile = path.join(primaryDir, 'db_credentials_users.json');
-  try {
-    if (!fs.existsSync(primaryDir)) {
-      fs.mkdirSync(primaryDir, { recursive: true });
-    }
-    const testFile = path.join(primaryDir, '.write_test');
-    fs.writeFileSync(testFile, 'ok');
-    fs.unlinkSync(testFile);
-    return primaryFile;
-  } catch {
-    const tmpDir = path.join(os.tmpdir(), 'bancactiu_data');
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-    return path.join(tmpDir, 'db_credentials_users.json');
+declare global {
+  // eslint-disable-next-line no-var
+  var __bancactiu_server_users__: SystemUser[] | undefined;
+}
+
+const PRIMARY_DATA_DIR = path.join(process.cwd(), 'data');
+const PRIMARY_DB_FILE = path.join(PRIMARY_DATA_DIR, 'db_credentials_users.json');
+
+const TMP_DATA_DIR = path.join(os.tmpdir(), 'bancactiu_data');
+const TMP_DB_FILE = path.join(TMP_DATA_DIR, 'db_credentials_users.json');
+
+/**
+ * Funció de concordança d'identificador estricta i sense col·lisions
+ */
+export function matchesIdentifier(u: SystemUser, identifier: string): boolean {
+  if (!u || !identifier) return false;
+  const clean = identifier.trim().toUpperCase();
+  const uDni = (u.dni || '').trim().toUpperCase();
+  const uUser = (u.username || '').trim().toUpperCase();
+  const uEmail = (u.email || '').trim().toUpperCase();
+  const uId = (u.id || '').trim().toUpperCase();
+
+  if (uDni === clean || uUser === clean || uEmail === clean || uId === clean) {
+    return true;
   }
+
+  // Concordança específica per al compte Administrador Institucional
+  if (clean === 'ADMINISTRADOR' || clean === 'ADMIN') {
+    return (
+      uUser === 'ADMINISTRADOR' ||
+      uDni === 'ADMINISTRADOR' ||
+      uId === 'ADMINISTRADOR' ||
+      uId === 'USER-ADMIN-INSTITUCIONAL'
+    );
+  }
+
+  return false;
 }
 
 /**
@@ -45,84 +63,104 @@ export function sanitizeUser(user: SystemUser): Omit<SystemUser, 'currentPasswor
  */
 export function getServerUsers(): SystemUser[] {
   try {
-    const dbFile = getDbFilePath();
-    const dataDir = path.dirname(dbFile);
-
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    // 1. Si ja tenim memòria viva a la instància/procés Node.js
+    if (globalThis.__bancactiu_server_users__ && globalThis.__bancactiu_server_users__.length > 0) {
+      return globalThis.__bancactiu_server_users__;
     }
 
-    if (!fs.existsSync(dbFile)) {
-      // Inicialitza amb hashes segurs
-      const seeded = INITIAL_SYSTEM_USERS.map((u) => ({
+    let parsed: SystemUser[] | null = null;
+
+    // 2. Comprovar fitxer a /tmp (on s'escriuen les actualitzacions a Vercel Serverless)
+    if (fs.existsSync(TMP_DB_FILE)) {
+      try {
+        const tmpContent = fs.readFileSync(TMP_DB_FILE, 'utf-8');
+        parsed = JSON.parse(tmpContent) as SystemUser[];
+      } catch (err) {
+        console.warn('[ServerCredentialsStore] Error llegint TMP_DB_FILE:', err);
+      }
+    }
+
+    // 3. Fallback a fitxer primari al bundle de l'aplicació
+    if (!parsed && fs.existsSync(PRIMARY_DB_FILE)) {
+      try {
+        const primContent = fs.readFileSync(PRIMARY_DB_FILE, 'utf-8');
+        parsed = JSON.parse(primContent) as SystemUser[];
+      } catch (err) {
+        console.warn('[ServerCredentialsStore] Error llegint PRIMARY_DB_FILE:', err);
+      }
+    }
+
+    // 4. Si no hi ha cap fitxer de persistència, inicialitzar amb els usuaris de base
+    if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+      parsed = INITIAL_SYSTEM_USERS.map((u) => ({
         ...u,
         currentPassword: u.currentPassword.startsWith('$pbkdf2$')
           ? u.currentPassword
           : hashPassword(u.currentPassword),
       }));
-      fs.writeFileSync(dbFile, JSON.stringify(seeded, null, 2), 'utf-8');
-      return seeded;
     }
 
-    const content = fs.readFileSync(dbFile, 'utf-8');
-    const parsed = JSON.parse(content) as SystemUser[];
-
-    // Assegurar que el superadministrador 52622304Y estigui sempre inicialitzat
-    const hasSuperAdmin = parsed.some(
-      (u) => u.username.toUpperCase() === '52622304Y' || u.dni.toUpperCase() === '52622304Y'
-    );
-
-    if (!hasSuperAdmin) {
-      const superAdminInitial = INITIAL_SYSTEM_USERS.find((u) => u.username === '52622304Y');
-      if (superAdminInitial) {
-        parsed.unshift({
-          ...superAdminInitial,
-          currentPassword: superAdminInitial.currentPassword.startsWith('$pbkdf2$')
-            ? superAdminInitial.currentPassword
-            : hashPassword(superAdminInitial.currentPassword),
-        });
-        saveServerUsers(parsed);
+    // 5. Garantir que els comptes claus existeixin sempre (Administrador, 52622304Y, 48956602Z)
+    const criticalAccounts = ['ADMINISTRADOR', '52622304Y', '48956602Z'];
+    for (const crit of criticalAccounts) {
+      const exists = parsed.some((u) => matchesIdentifier(u, crit));
+      if (!exists) {
+        const initial = INITIAL_SYSTEM_USERS.find((u) => matchesIdentifier(u, crit));
+        if (initial) {
+          parsed.unshift({
+            ...initial,
+            currentPassword: initial.currentPassword.startsWith('$pbkdf2$')
+              ? initial.currentPassword
+              : hashPassword(initial.currentPassword),
+          });
+        }
       }
     }
 
-    // Assegurar que el superadministrador junior 48956602Z estigui sempre inicialitzat
-    const hasJuniorAdmin = parsed.some(
-      (u) => u.username.toUpperCase() === '48956602Z' || u.dni.toUpperCase() === '48956602Z'
-    );
-
-    if (!hasJuniorAdmin) {
-      const juniorInitial = INITIAL_SYSTEM_USERS.find((u) => u.username === '48956602Z');
-      if (juniorInitial) {
-        parsed.push({
-          ...juniorInitial,
-          currentPassword: juniorInitial.currentPassword.startsWith('$pbkdf2$')
-            ? juniorInitial.currentPassword
-            : hashPassword(juniorInitial.currentPassword),
-        });
-        saveServerUsers(parsed);
-      }
-    }
-
+    globalThis.__bancactiu_server_users__ = parsed;
+    saveServerUsers(parsed);
     return parsed;
   } catch (error) {
-    console.error('[ServerCredentialsStore] Error llegint db_credentials_users.json:', error);
-    return INITIAL_SYSTEM_USERS;
+    console.error('[ServerCredentialsStore] Error fatal a getServerUsers:', error);
+    const fallback = INITIAL_SYSTEM_USERS.map((u) => ({
+      ...u,
+      currentPassword: u.currentPassword.startsWith('$pbkdf2$')
+        ? u.currentPassword
+        : hashPassword(u.currentPassword),
+    }));
+    globalThis.__bancactiu_server_users__ = fallback;
+    return fallback;
   }
 }
 
 /**
- * Desa la col·lecció d'usuaris a disc al servidor
+ * Desa la col·lecció d'usuaris tant en memòria global com a disc (tmp i primary)
  */
 export function saveServerUsers(users: SystemUser[]): void {
   try {
-    const dbFile = getDbFilePath();
-    const dataDir = path.dirname(dbFile);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    globalThis.__bancactiu_server_users__ = users;
+
+    // Escriure a directori temporal (/tmp)
+    try {
+      if (!fs.existsSync(TMP_DATA_DIR)) {
+        fs.mkdirSync(TMP_DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(TMP_DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
+    } catch (tmpErr) {
+      console.warn('[ServerCredentialsStore] No es pot escriure a TMP_DB_FILE:', tmpErr);
     }
-    fs.writeFileSync(dbFile, JSON.stringify(users, null, 2), 'utf-8');
+
+    // Intentar escriure a primary (local dev / Docker)
+    try {
+      if (!fs.existsSync(PRIMARY_DATA_DIR)) {
+        fs.mkdirSync(PRIMARY_DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
+    } catch {
+      // Normal a entorns de només lectura (Vercel Serverless)
+    }
   } catch (error) {
-    console.error('[ServerCredentialsStore] Error desant db_credentials_users.json:', error);
+    console.error('[ServerCredentialsStore] Error desant usuaris al servidor:', error);
   }
 }
 
@@ -136,24 +174,31 @@ export function saveUserPasswordDirect(
 ): boolean {
   try {
     const users = getServerUsers();
-    const cleanId = identifier.trim().toUpperCase();
-    const userIdx = users.findIndex(
-      (u) =>
-        u.dni.toUpperCase() === cleanId ||
-        u.username.toUpperCase() === cleanId ||
-        u.email.toUpperCase() === cleanId ||
-        (cleanId === 'ADMINISTRADOR' && (u.username.toUpperCase().includes('ADMIN') || u.id.toLowerCase().includes('admin')))
-    );
+    let userIdx = users.findIndex((u) => matchesIdentifier(u, identifier));
+
+    if (userIdx === -1) {
+      const initialMatch = INITIAL_SYSTEM_USERS.find((u) => matchesIdentifier(u, identifier));
+      if (initialMatch) {
+        users.push({ ...initialMatch });
+        userIdx = users.length - 1;
+      }
+    }
+
     if (userIdx !== -1) {
+      const rawHistory = Array.isArray(history) ? history : [];
+      // Assegurar que el nou hash sigui el primer i un màxim de 10
+      const cleanHistory = [newHash, ...rawHistory.filter((h) => h !== newHash)].slice(0, 10);
+
       users[userIdx] = {
         ...users[userIdx],
         currentPassword: newHash,
         mustChangePassword: false,
-        passwordHistory: history.slice(0, 10),
+        passwordHistory: cleanHistory,
         lastPasswordChangeDate: new Date().toISOString(),
         failedLoginAttempts: 0,
         lockoutUntil: null,
       };
+
       saveServerUsers(users);
       return true;
     }
@@ -173,14 +218,7 @@ export function updateServerUserPassword(
   passwordNova: string
 ): { ok: boolean; missatge: string; user?: Omit<SystemUser, 'currentPassword' | 'passwordHistory'> } {
   const users = getServerUsers();
-  const cleanId = dniOrUsername.trim().toUpperCase();
-
-  const userIdx = users.findIndex(
-    (u) =>
-      u.dni.toUpperCase() === cleanId ||
-      u.username.toUpperCase() === cleanId ||
-      u.email.toUpperCase() === cleanId
-  );
+  const userIdx = users.findIndex((u) => matchesIdentifier(u, dniOrUsername));
 
   if (userIdx === -1) {
     return {
@@ -213,13 +251,13 @@ export function updateServerUserPassword(
   // Xifratge criptogràfic PBKDF2 segons RGPD
   const newHashed = hashPassword(passwordNova.trim());
 
-  // Afegeix la contrasenya actual a l'historial (fins a 10)
-  const updatedHistory = [...history, user.currentPassword].slice(-10);
+  // Afegeix la contrasenya a l'historial (fins a 10)
+  const updatedHistory = [newHashed, ...history.filter((h) => h !== newHashed)].slice(0, 10);
 
   const updatedUser: SystemUser = {
     ...user,
     currentPassword: newHashed,
-    mustChangePassword: false, // Ja no és necessari canviar-la
+    mustChangePassword: false,
     lastPasswordChangeDate: new Date().toISOString(),
     passwordHistory: updatedHistory,
     failedLoginAttempts: 0,
@@ -231,7 +269,7 @@ export function updateServerUserPassword(
 
   return {
     ok: true,
-    missatge: 'Contrasenya actualitzada i xifrada correctament a la base de dades central de BancActiu 1.0 (Render)',
+    missatge: 'Contrasenya actualitzada i xifrada correctament a la base de dades central de BancActiu.',
     user: sanitizeUser(updatedUser),
   };
 }
@@ -250,15 +288,9 @@ export function authenticateServerUser(
   missatge?: string;
 } {
   const users = getServerUsers();
-  const cleanId = identifier.trim().toUpperCase();
   const cleanPass = passwordAttempt.trim();
 
-  const userIdx = users.findIndex(
-    (u) =>
-      u.dni.toUpperCase() === cleanId ||
-      u.username.toUpperCase() === cleanId ||
-      u.email.toUpperCase() === cleanId
-  );
+  const userIdx = users.findIndex((u) => matchesIdentifier(u, identifier));
 
   if (userIdx === -1) {
     return {
@@ -289,7 +321,18 @@ export function authenticateServerUser(
     }
   }
 
-  // Comprova contrasenya amb suport per hash i migració automàtica a PBKDF2
+  // Si l'usuari ja té configurada una contrasenya definitiva, invalidar el "1234" provisional
+  const hasCustomPassword = user.mustChangePassword === false && user.currentPassword !== '1234';
+  if (hasCustomPassword && cleanPass === '1234') {
+    return {
+      ok: false,
+      sanitizedUser: sanitizeUser(user),
+      reason: 'INVALID_PASSWORD',
+      missatge: "Clau d'accés incorrecta. La clau provisional 1234 ha quedat invalidada.",
+    };
+  }
+
+  // Comprova contrasenya amb suport per hash PBKDF2
   const isMatch = verifyPassword(cleanPass, user.currentPassword);
   if (!isMatch) {
     const attempts = (user.failedLoginAttempts || 0) + 1;
