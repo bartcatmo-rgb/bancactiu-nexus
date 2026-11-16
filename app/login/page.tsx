@@ -419,8 +419,8 @@ function useTenantContext() {
     clientIp?: string;
   }>({
     id: 'tenant-default',
-    name: 'BancActiu 2.0 Enterprise',
-    shortName: 'BancActiu 2.0',
+    name: 'BancActiu 3.0 Enterprise',
+    shortName: 'BancActiu 3.0',
     description: 'Plataforma Unificada de Governança i Serveis Sociosanitaris',
     badgeLabel: 'Plataforma Institucional',
     badgeVariant: 'purple',
@@ -458,7 +458,7 @@ export default function BancActiuLoginPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black text-white tracking-tight">
-                  BancActiu <span className="text-cyan-400">2.0</span>
+                  BancActiu <span className="text-cyan-400">3.0</span>
                 </h1>
                 <GlassBadge variant={tenant.badgeVariant || 'purple'} pulse>
                   {tenant.isDefault ? "Porta d'Accés Segura" : tenant.badgeLabel}
@@ -501,7 +501,7 @@ export default function BancActiuLoginPage() {
 
         {/* Peu de pàgina neutre */}
         <footer className="text-center text-xs text-slate-500 pt-4 border-t border-white/10">
-          BancActiu Nexus 2.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; {tenant.isDefault ? "Arquitectura Distribuïda" : tenant.shortName}
+          BancActiu Nexus 3.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; {tenant.isDefault ? "Arquitectura Distribuïda" : tenant.shortName}
         </footer>
       </div>
     </RadialAuraBackground>

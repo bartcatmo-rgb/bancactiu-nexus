@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -28,7 +28,7 @@ const documents = [
   {
     id: 'superadmin',
     title: "Manual d'Operació del Superadministrador",
-    badge: 'Nexus 2.0 · Governança',
+    badge: 'Nexus 3.0 · Governança',
     badgeVariant: 'purple' as const,
     icon: <ShieldCheck className="w-7 h-7 text-purple-400" />,
     gradient: 'from-purple-600/30 to-indigo-600/30',
@@ -36,7 +36,7 @@ const documents = [
     desc: "Guia completa de control d'infraestructura, alta jeràrquica descentralitzada de centres sanitaris i educatius de Catalunya (IETI), gestió d'usuaris vinculada a Marc Cachinero Baranda (DNI 48956602Z) i Administrador, i execució de simulacions de càrrega massiva.",
     pdfUrl: '/docs/MANUAL_SUPERADMIN_NEXUS_2.0.pdf',
     size: '196 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       'Vinculació oficial SuperAdmin DNI 48956602Z (Marc Cachinero Baranda)',
       'Protocol d’activació de contrasenya obligatòria docent (Administrador)',
@@ -55,7 +55,7 @@ const documents = [
     desc: 'Arquitectura de seguretat militar, compliment rigorós de l’Esquema Nacional de Seguretat (RD 311/2022), traçabilitat forense immutable, xifrat AES-256-GCM i rutes d’enllaç híbrides segures.',
     pdfUrl: '/docs/MANUAL_SEGURETAT_ENS_2.0.pdf',
     size: '202 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       'Compliment ENS Nivell Alt i RGPD Art. 9',
       'Xifratge AES-256-GCM i canals TLS 1.3 mTLS',
@@ -74,7 +74,7 @@ const documents = [
     desc: 'Operació de l’assistent cognitiu institucional amb selector interactiu de tres avatars (Kenzo, Kenza, Kenz Core), persistència de preferències de sessió i assistència activa al Superadministrador.',
     pdfUrl: '/docs/MANUAL_ASSISTENT_KENZO_2.0.pdf',
     size: '165 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       'Selector interactiu Kenzo / Kenza / Kenz Core',
       'Persistència a localStorage i perfil Superadmin',
@@ -93,7 +93,7 @@ const documents = [
     desc: 'Dossier executiu de 10 diapositives d’alt impacte per a reunions institucionals davant la Generalitat de Catalunya, CatSalut, Ajuntament de Cornellà i Creu Roja.',
     pdfUrl: '/docs/PRESENTACIO_OFICIAL_BANCACTIU_2.0.pdf',
     size: '199 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       '10 diapositives d’estructura executiva',
       'Mètriques d’impacte i escalabilitat a Catalunya',
@@ -112,7 +112,7 @@ const documents = [
     desc: 'Guions oficials de producció audiovisual de 2 minuts (120 segons) amb instruccions tècniques de realització, pauses SSML i versions completes en Català i Castellà.',
     pdfUrl: '/docs/GUIONS_VIDEO_VEU_NEURAL_2.0.pdf',
     size: '175 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       'Temporització precisa per blocs de 0 a 120s',
       'Marcadors d’entonació i pauses SSML per a TTS',
@@ -131,7 +131,7 @@ const documents = [
     desc: 'Arquitectura d’adaptació automàtica de marca i context per IP corporativa i subdomini HTTP, eliminació de hardcoding institucional i compliment Zero-Trust d’auditoria.',
     pdfUrl: '/docs/MANUAL_MULTI_TENANT_IP_CONTEXT_2.0.pdf',
     size: '180 KB',
-    version: 'v2.0-PROD',
+    version: 'v3.0-PROD',
     highlights: [
       'Detecció automàtica de rangs CIDR a Edge Middleware',
       'White-Labeling contextual sense referències hardcoded',
@@ -159,10 +159,10 @@ export default function DocsPage() {
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Centre de Documentació Oficial i PDFs Executius
                 </h1>
-                <GlassBadge variant="blue">Release 2.0</GlassBadge>
+                <GlassBadge variant="blue">Release 3.0</GlassBadge>
               </div>
               <p className="text-xs sm:text-sm text-slate-300">
-                BancActiu 2.0 Enterprise · Generalitat de Catalunya & Salut / Benestar
+                BancActiu 3.0 Enterprise · Generalitat de Catalunya & Salut / Benestar
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function DocsPage() {
                   </h2>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  Tots els documents estan degudament maquetats sota els estàndards visuals corporatius de la Generalitat de Catalunya i BancActiu 2.0, amb disseny glassmorphism d’alta fidelitat i preparats per a impressió oficial o revisió d’auditoria.
+                  Tots els documents estan degudament maquetats sota els estàndards visuals corporatius de la Generalitat de Catalunya i BancActiu 3.0, amb disseny glassmorphism d’alta fidelitat i preparats per a impressió oficial o revisió d’auditoria.
                 </p>
               </div>
               <a

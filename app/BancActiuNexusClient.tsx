@@ -79,8 +79,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
   }>({
     id: 'tenant-default',
     code: 'BANCACTIU_ENTERPRISE',
-    name: 'BancActiu 2.0 Enterprise',
-    shortName: 'BancActiu 2.0',
+    name: 'BancActiu 3.0 Enterprise',
+    shortName: 'BancActiu 3.0',
     description: 'Plataforma Unificada de Governança i Serveis Sociosanitaris',
     badgeLabel: 'Plataforma Institucional',
     badgeVariant: 'purple',
@@ -537,7 +537,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Grid size={18} className="text-cyan-400" />
-                  Ecosistema de Micro-Aplicacions BancActiu 2.0
+                  Ecosistema de Micro-Aplicacions BancActiu 3.0
                 </h3>
                 <span className="text-xs text-slate-400">
                   Base de Dades Compartida (@bancactiu/db)
@@ -605,7 +605,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         <GlassModal
           isOpen={isLauncherOpen}
           onClose={() => setIsLauncherOpen(false)}
-          title="Navegador de Micro-Aplicacions BancActiu 2.0"
+          title="Navegador de Micro-Aplicacions BancActiu 3.0"
           maxWidth="4xl"
         >
           <GatewayLauncher
@@ -618,7 +618,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
         {/* Peu de pàgina institucional neutre i dinàmic */}
         <footer className="mt-6 pt-3 border-t border-white/10 text-center text-xs text-slate-500">
-          BancActiu Nexus 2.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; {tenantContext.isDefault ? "Arquitectura Distribuïda i Zero-Trust" : tenantContext.name}
+          BancActiu Nexus 3.0 &middot; Sistema de Superadministració i Seguretat Perimetral &middot; {tenantContext.isDefault ? "Arquitectura Distribuïda i Zero-Trust" : tenantContext.name}
         </footer>
         {/* Assistent Flotant Kenzo AI */}
         <KenzoAssistant />
