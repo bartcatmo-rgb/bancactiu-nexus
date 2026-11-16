@@ -134,27 +134,36 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     activeRole === 'DIRECCIO' ||
     initialUser?.role === 'SUPERADMIN';
 
+  // Lògica de dispar estricta: NÚMÉS s'activa per a les 3 accions crítiques de governança i seguretat
+  // (1: Concessió/modificació rols superadmin, 2: Exportació massiva RGPD, 3: Laboratori d'auditoria/xarxa)
+  // Qualssevol altra acció rutinària o navegació ordinària no ha de disparar el modal.
   const requestSensitiveAction = (
+    actionType: 'SUPERADMIN_ROLE_CHANGE' | 'MASS_DATA_EXPORT' | 'AUDIT_LAB_NETWORK',
     actionTitle: string,
     actionDescription: string,
-    actionSeverity: 'critical' | 'high' | 'warning',
     onAuthorized: (data?: any) => void
   ) => {
-    if (isCriticalRole) {
+    const isAllowedCriticalAction =
+      actionType === 'SUPERADMIN_ROLE_CHANGE' ||
+      actionType === 'MASS_DATA_EXPORT' ||
+      actionType === 'AUDIT_LAB_NETWORK';
+
+    if (isCriticalRole && isAllowedCriticalAction) {
       setAuthModalConfig({
         isOpen: true,
         actionTitle,
         actionDescription,
-        actionSeverity,
+        actionSeverity: 'critical',
         onAuthorized: (data) => {
           showToast(
-            'Acció Autoritzada (ENS Nivell Alt)',
+            'Acció Crítica Autoritzada (ENS Nivell Alt)',
             `Autorització confirmada per [${actionTitle}]. Audit ID: ${data?.auditId || 'ENS-AUDIT'}`
           );
           onAuthorized(data);
         },
       });
     } else {
+      // Qualsevol altra navegació o acció s'executa immediatament sense modal
       onAuthorized();
     }
   };
@@ -238,22 +247,13 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
             {/* Centre: Accions Ràpides Exclusives amb Re-Autenticació */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Botó 1: Gestió d'Usuaris i Rols */}
+              {/* Botó 1: Gestió d'Usuaris i Rols (Navegació ordinària) */}
               <button
                 type="button"
                 onClick={() => {
-                  if (activeWorkspace === 'roles-services') {
-                    setActiveWorkspace(null);
-                  } else {
-                    requestSensitiveAction(
-                      "Concessió i Modificació de Rols RBAC",
-                      "Assignació i revocació de privilegis a administratius, serveis i entitats veïnals sota directrius ENS Nivell Alt.",
-                      "critical",
-                      () => setActiveWorkspace('roles-services')
-                    );
-                  }
+                  setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services');
                 }}
-                title="Assignar perfils a administratius i entitats veïnals (Requereix Doble Verificació)"
+                title="Gestió de perfils, serveis i llocs de treball"
                 className={`group px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'roles-services'
                     ? 'bg-purple-600/40 border-purple-400 shadow-purple-500/20'
@@ -264,7 +264,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span>Gestió d'Usuaris i Rols</span>
               </button>
 
-              {/* Botó 2: Auditoria Zero-Trust */}
+              {/* Botó 2: Auditoria Zero-Trust (Accés explícit al laboratori d'auditoria/paràmetres de xarxa) */}
               <button
                 type="button"
                 onClick={() => {
@@ -272,9 +272,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     setActiveWorkspace(null);
                   } else {
                     requestSensitiveAction(
-                      "Auditoria Forense Zero-Trust & Scan ENS",
+                      'AUDIT_LAB_NETWORK',
+                      "Accés al Laboratori d'Auditoria i Paràmetres de Xarxa",
                       "Accés a mètriques d'auditoria immutable, escàner de seguretat en temps real i laboratoris d'estrès.",
-                      "critical",
                       () => setActiveWorkspace('security-lab')
                     );
                   }
@@ -288,17 +288,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               >
                 <Lock size={14} className="text-cyan-400 group-hover:scale-110 transition-transform" />
                 <span>Auditoria Zero-Trust</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">ENS Alt</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">2FA</span>
               </button>
 
-              {/* Botó 3: Exportació Massiva de Dades Protegides */}
+              {/* Botó 3: Exportació Massiva de Dades Protegides (sota RGPD) */}
               <button
                 type="button"
                 onClick={() => {
                   requestSensitiveAction(
+                    'MASS_DATA_EXPORT',
                     "Exportació Massiva de Dades Protegides (RGPD/ENS)",
                     "Extracció i descàrrega xifrada del registre d'auditoria forense i expedients d'ajudes tècniques.",
-                    "critical",
                     (data) => {
                       showToast(
                         "Exportació Forense Autoritzada",
@@ -398,40 +398,26 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     variant="primary"
                     onClick={() =>
                       requestSensitiveAction(
-                        "Stress & Security Lab (Escàner ENS)",
+                        'AUDIT_LAB_NETWORK',
+                        "Accés al Laboratori d'Auditoria i Paràmetres de Xarxa",
                         "Simulació de concurrència d'alta escala (250k ciutadans) i escaneig de vulnerabilitats.",
-                        "critical",
                         () => setActiveWorkspace('security-lab')
                       )
                     }
                     icon={<Activity size={16} />}
                   >
-                    Stress & Security Lab
+                    Stress & Security Lab (2FA)
                   </GlassButton>
                   <GlassButton
                     variant="secondary"
-                    onClick={() =>
-                      requestSensitiveAction(
-                        "Consola Enginyer Agent IA (Modificació Codi)",
-                        "Modificacions a demanda del codi font amb generació de diff i auditoria forense.",
-                        "critical",
-                        () => setActiveWorkspace('ai-agent')
-                      )
-                    }
+                    onClick={() => setActiveWorkspace('ai-agent')}
                     icon={<Bot size={16} />}
                   >
                     Agent IA Codi
                   </GlassButton>
                   <GlassButton
                     variant="primary"
-                    onClick={() =>
-                      requestSensitiveAction(
-                        "Pasarel·les d'Interoperabilitat AOC",
-                        "Consultes xifrades a Padró, Dependència i Història Clínica Compartida.",
-                        "high",
-                        () => setActiveWorkspace('interoperability')
-                      )
-                    }
+                    onClick={() => setActiveWorkspace('interoperability')}
                     icon={<Globe size={16} />}
                   >
                     Pasarel·les AOC
@@ -440,21 +426,14 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               </div>
             </GlassCard>
 
-            {/* Quadrícula de 4 Mòduls SuperAdmin Avançats amb Doble Verificació */}
+            {/* Quadrícula de 4 Mòduls SuperAdmin */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Mòdul 1: Alta Descentralitzada de Centres */}
+              {/* Mòdul 1: Alta Descentralitzada de Centres (Navegació ordinària) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
                 className="p-5 flex flex-col justify-between"
-                onClick={() =>
-                  requestSensitiveAction(
-                    "Alta Descentralitzada de Centres Sanitaris",
-                    "Configuració i alta jeràrquica de CAPs, hospitals i entitats per cada gerència territorial.",
-                    "high",
-                    () => setActiveWorkspace('centres-onboarding')
-                  )
-                }
+                onClick={() => setActiveWorkspace('centres-onboarding')}
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
@@ -468,24 +447,17 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
-                  <span>Gestionar Centres (2FA)</span>
+                  <span>Gestionar Centres</span>
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
 
-              {/* Mòdul 2: Rols, Serveis i Llocs de Treball */}
+              {/* Mòdul 2: Rols, Serveis i Llocs de Treball (Navegació ordinària) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
                 className="p-5 flex flex-col justify-between"
-                onClick={() =>
-                  requestSensitiveAction(
-                    "Superadministració de Rols i Llocs de Treball",
-                    "Superadministració del catàleg de serveis, rols RBAC i estructura de llocs de treball.",
-                    "critical",
-                    () => setActiveWorkspace('roles-services')
-                  )
-                }
+                onClick={() => setActiveWorkspace('roles-services')}
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
@@ -499,21 +471,21 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs font-bold text-indigo-300 pt-2 border-t border-white/10">
-                  <span>Configurar Rols (2FA)</span>
+                  <span>Configurar Rols</span>
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
 
-              {/* Mòdul 3: Stress & Security Lab */}
+              {/* Mòdul 3: Stress & Security Lab (Accés explícit al laboratori d'auditoria/xarxa: Requereix 2FA) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
                 className="p-5 flex flex-col justify-between"
                 onClick={() =>
                   requestSensitiveAction(
-                    "Stress & Security Lab (Escàner ENS)",
+                    'AUDIT_LAB_NETWORK',
+                    "Accés al Laboratori d'Auditoria i Paràmetres de Xarxa",
                     "Simulació de concurrència (1-3 anys Catalunya) i escaneig de vulnerabilitats en temps real.",
-                    "critical",
                     () => setActiveWorkspace('security-lab')
                   )
                 }
@@ -535,19 +507,12 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 </div>
               </GlassCard>
 
-              {/* Mòdul 4: Consola Agent IA de Codi */}
+              {/* Mòdul 4: Consola Agent IA de Codi (Navegació ordinària) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
                 className="p-5 flex flex-col justify-between"
-                onClick={() =>
-                  requestSensitiveAction(
-                    "Consola Enginyer Agent IA (Modificació Codi)",
-                    "Modificacions a demanda mitjançant prompts en llenguatge natural amb generació de diff i auditoria.",
-                    "critical",
-                    () => setActiveWorkspace('ai-agent')
-                  )
-                }
+                onClick={() => setActiveWorkspace('ai-agent')}
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
@@ -561,7 +526,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs font-bold text-cyan-300 pt-2 border-t border-white/10">
-                  <span>Executar Agent (2FA)</span>
+                  <span>Executar Agent</span>
                   <ArrowRight size={14} />
                 </div>
               </GlassCard>
@@ -626,7 +591,10 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 backdrop-blur-xl">
                 <SuperAdminRolesAndServicesWorkspace
                   onClose={() => setActiveWorkspace(null)}
-                  onShowToast={(type, title, msg) => alert(`${title}: ${msg}`)}
+                  onShowToast={(type, title, msg) => showToast(title, msg)}
+                  onRequestSensitiveAction={(title, desc, onAuth) =>
+                    requestSensitiveAction('SUPERADMIN_ROLE_CHANGE', title, desc, onAuth)
+                  }
                 />
               </div>
             )}

@@ -24,6 +24,7 @@ import type { ManagedRole } from '@/types/demo-user';
 interface SuperAdminRolesAndServicesWorkspaceProps {
   onClose: () => void;
   onShowToast?: (type: 'success' | 'info' | 'warning' | 'error', title: string, message: string) => void;
+  onRequestSensitiveAction?: (actionTitle: string, actionDescription: string, onAuthorized: () => void) => void;
 }
 
 export interface SystemServiceItem {
@@ -179,6 +180,7 @@ const DEFAULT_ROLES: RolePermissionMatrixItem[] = [
 export const SuperAdminRolesAndServicesWorkspace: React.FC<SuperAdminRolesAndServicesWorkspaceProps> = ({
   onClose,
   onShowToast,
+  onRequestSensitiveAction,
 }) => {
   const [activeTab, setActiveTab] = useState<'services' | 'roles' | 'workplaces'>('roles');
   const [services, setServices] = useState<SystemServiceItem[]>(DEFAULT_SERVICES);
@@ -211,49 +213,77 @@ export const SuperAdminRolesAndServicesWorkspace: React.FC<SuperAdminRolesAndSer
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isNewServiceModalOpen, isNewRoleModalOpen, onClose]);
 
-  // Toggle de permís granular per rol
+  // Toggle de permís granular per rol (Restringit estrictament: re-autenticació NOMÉS en modificar SuperAdmin)
   const handleTogglePermission = (permissionId: string) => {
-    setRoles((prev) =>
-      prev.map((r) => {
-        if (r.rol === selectedRole) {
-          const has = r.permisos.includes(permissionId);
-          const updatedPerms = has
-            ? r.permisos.filter((p) => p !== permissionId)
-            : [...r.permisos, permissionId];
-          return { ...r, permisos: updatedPerms };
-        }
-        return r;
-      })
-    );
+    const isSuperAdminRole = selectedRole === 'SUPER_ADMIN';
 
-    if (onShowToast) {
-      onShowToast('info', 'Permís Actualitzat', `Matriu RBAC actualitzada per al rol ${selectedRole}.`);
+    const executeToggle = () => {
+      setRoles((prev) =>
+        prev.map((r) => {
+          if (r.rol === selectedRole) {
+            const has = r.permisos.includes(permissionId);
+            const updatedPerms = has
+              ? r.permisos.filter((p) => p !== permissionId)
+              : [...r.permisos, permissionId];
+            return { ...r, permisos: updatedPerms };
+          }
+          return r;
+        })
+      );
+
+      if (onShowToast) {
+        onShowToast('info', 'Permís Actualitzat', `Matriu RBAC actualitzada per al rol ${selectedRole}.`);
+      }
+    };
+
+    if (isSuperAdminRole && onRequestSensitiveAction) {
+      onRequestSensitiveAction(
+        'Modificació de Rols de Superadministrador',
+        `Alteració crítica de la matriu de privilegis del rol Superadministrador TI (${permissionId}) sota directrius ENS Nivell Alt.`,
+        executeToggle
+      );
+    } else {
+      executeToggle();
     }
   };
 
-  // Guardar nou rol
+  // Guardar nou rol (Restringit estrictament: re-autenticació NOMÉS en concedir rol SuperAdmin o àmbit Global)
   const handleCreateRole = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleId || !newRoleTitle) return;
 
     const formattedId = newRoleId.trim().toUpperCase().replace(/\s+/g, '_');
-    const newRoleItem: RolePermissionMatrixItem = {
-      rol: formattedId,
-      titol: newRoleTitle.trim(),
-      ambit: newRoleAmbit,
-      descripcio: newServiceDesc || 'Rol específic assignat pel Superadministrador.',
-      permisos: ['CONSULTA_CENS'],
+    const isGrantingSuperAdmin = formattedId.includes('SUPER') || formattedId.includes('ADMIN_TOTAL') || newRoleAmbit === 'GLOBAL';
+
+    const executeCreate = () => {
+      const newRoleItem: RolePermissionMatrixItem = {
+        rol: formattedId,
+        titol: newRoleTitle.trim(),
+        ambit: newRoleAmbit,
+        descripcio: newRoleDesc || 'Rol específic assignat pel Superadministrador.',
+        permisos: ['CONSULTA_CENS'],
+      };
+
+      setRoles((prev) => [...prev, newRoleItem]);
+      setSelectedRole(formattedId);
+      setIsNewRoleModalOpen(false);
+      setNewRoleId('');
+      setNewRoleTitle('');
+      setNewRoleDesc('');
+
+      if (onShowToast) {
+        onShowToast('success', 'Nou Rol Donat d’Alta', `S'ha creat el rol ${formattedId} correctament.`);
+      }
     };
 
-    setRoles((prev) => [...prev, newRoleItem]);
-    setSelectedRole(formattedId);
-    setIsNewRoleModalOpen(false);
-    setNewRoleId('');
-    setNewRoleTitle('');
-    setNewRoleDesc('');
-
-    if (onShowToast) {
-      onShowToast('success', 'Nou Rol Donat d’Alta', `S'ha creat el rol ${formattedId} correctament.`);
+    if (isGrantingSuperAdmin && onRequestSensitiveAction) {
+      onRequestSensitiveAction(
+        'Concessió de Rol de Superadministrador',
+        `Creació i concessió de privilegis de governança global per al nou rol ${formattedId}.`,
+        executeCreate
+      );
+    } else {
+      executeCreate();
     }
   };
 
