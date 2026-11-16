@@ -48,12 +48,19 @@ export function middleware(request: NextRequest) {
     return res;
   };
 
-  // 2. Rutes permeses sense autenticació (públiques, auth endpoints, recursos estàtics)
+  // 2. Neteja imperativa i gestió de la ruta pública /login
+  if (pathname === '/login') {
+    const response = NextResponse.next();
+    // Destrueix qualsevol cookie de sessió residual en entrar a login
+    response.cookies.delete('bancactiu_session');
+    return applyTenantHeaders(response);
+  }
+
+  // 3. Rutes permeses sense autenticació (públiques, auth endpoints, recursos estàtics)
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/sync/delta') ||
-    pathname === '/login' ||
     pathname === '/favicon.ico' ||
     pathname.startsWith('/docs') ||
     pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|woff2?|map|pdf)$/)
@@ -62,7 +69,7 @@ export function middleware(request: NextRequest) {
     return applyTenantHeaders(response);
   }
 
-  // 3. Comprovació de la sessió criptogràfica Zero-Trust
+  // 4. Comprovació de la sessió criptogràfica Zero-Trust
   const sessionCookie = request.cookies.get('bancactiu_session')?.value;
   let isValidSession = false;
 
@@ -70,17 +77,15 @@ export function middleware(request: NextRequest) {
     try {
       const decoded = decodeURIComponent(sessionCookie);
       const session = JSON.parse(decoded);
-      if (session && session.authenticated === true && session.role) {
+      if (session && (session.authenticated === true || session.role) && (session.user || session.role || session.dni)) {
         isValidSession = true;
       }
     } catch {
-      if (sessionCookie.length >= 16) {
-        isValidSession = true;
-      }
+      isValidSession = false;
     }
   }
 
-  // 4. Bloqueig d'accés no autoritzat
+  // 5. Bloqueig d'accés no autoritzat (Redirecció estricta a /login)
   if (!isValidSession) {
     if (pathname.startsWith('/api/')) {
       const unauthorizedRes = NextResponse.json(
@@ -100,14 +105,9 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
     }
     const redirectRes = NextResponse.redirect(loginUrl);
+    // Eliminar qualsevol cookie invàlida o residual a la redirecció
+    redirectRes.cookies.delete('bancactiu_session');
     return applyTenantHeaders(redirectRes);
-  }
-
-  // 5. Quan s'accedeix a /login, es permet sempre per evitar bucles d'autologin
-  // i es neteja la sessió prèvia si es demana reinici net.
-  if (pathname === '/login') {
-    const loginRes = NextResponse.next();
-    return applyTenantHeaders(loginRes);
   }
 
   const defaultRes = NextResponse.next();
