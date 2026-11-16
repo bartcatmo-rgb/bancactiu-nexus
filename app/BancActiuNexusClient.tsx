@@ -370,7 +370,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           </div>
         </aside>
       )}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 md:p-5 flex flex-col justify-between">
         {/* Capçalera institucional Glassmorphism amb acció de Tancar Sessió */}
         <GlassHeader
           appName="BancActiu Nexus (Consola SuperAdmin)"
@@ -385,42 +385,43 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
         {/* Zona de Treball Dinàmica o Launchpad */}
         {!activeWorkspace ? (
-          <main className="flex-1 my-4 space-y-6">
+          <main className="flex-1 my-2 sm:my-3 space-y-3 sm:space-y-4">
             {/* Banner de Benvinguda i Ecosistema 2.0 */}
-            <GlassCard variant="glow" glowColor="purple" className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <GlassCard variant="glow" glowColor="purple" className="p-3.5 sm:p-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
                       Panell Central de Comandament BancActiu Nexus
                     </h2>
                     <GlassBadge variant="emerald">Sessió Verificada</GlassBadge>
                   </div>
-                  <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-                    Benvingut al nucli de governança institucional. Des d'aquest espai tens accés a l'auditoria forense,
-                    a l'alta descentralitzada de centres i serveis, a la simulació de concurrència d'alta escala (fins a 250.000 usuaris)
-                    i a la consola de l'Enginyer Agent IA autònom.
+                  <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
+                    Governança institucional: auditoria forense, alta de centres i serveis, simulació d'estrès fins a 5 anys (250.000 usuaris) i consola d'Enginyer Agent IA autònom.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   <Link href="/docs">
                     <GlassButton
                       variant="primary"
-                      icon={<FileText size={16} />}
+                      size="sm"
+                      icon={<FileText size={14} />}
                     >
-                      Manuals & PDFs Executius
+                      Manuals & PDFs
                     </GlassButton>
                   </Link>
                   <GlassButton
                     variant="primary"
+                    size="sm"
                     onClick={() => setActiveWorkspace('simulations-audit')}
-                    icon={<Activity size={16} />}
+                    icon={<Activity size={14} />}
                   >
                     Auditoria & Estrès (5 Anys)
                   </GlassButton>
                   <GlassButton
                     variant="primary"
+                    size="sm"
                     onClick={() =>
                       requestSensitiveAction(
                         'AUDIT_LAB_NETWORK',
@@ -429,51 +430,53 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                         () => setActiveWorkspace('security-lab')
                       )
                     }
-                    icon={<Shield size={16} />}
+                    icon={<Shield size={14} />}
                   >
-                    Stress & Security Lab (2FA)
+                    Stress & Security (2FA)
                   </GlassButton>
                   <GlassButton
                     variant="secondary"
+                    size="sm"
                     onClick={() => setActiveWorkspace('ai-agent')}
-                    icon={<Bot size={16} />}
+                    icon={<Bot size={14} />}
                   >
-                    Agent IA Codi
+                    Agent IA
                   </GlassButton>
                   <GlassButton
                     variant="primary"
+                    size="sm"
                     onClick={() => setActiveWorkspace('interoperability')}
-                    icon={<Globe size={16} />}
+                    icon={<Globe size={14} />}
                   >
-                    Pasarel·les AOC
+                    AOC
                   </GlassButton>
                 </div>
               </div>
             </GlassCard>
 
-            {/* Quadrícula de 4 Mòduls SuperAdmin */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Quadrícula Compacta de 4 Mòduls SuperAdmin ("Bogons") */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
               {/* Mòdul 1: Alta Descentralitzada de Centres (Navegació ordinària) */}
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
-                className="p-5 flex flex-col justify-between"
+                className="p-3 sm:p-3.5 flex flex-col justify-between"
                 onClick={() => setActiveWorkspace('centres-onboarding')}
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
-                    <Building2 className="w-6 h-6" />
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white mb-2 shadow-md border border-white/20">
+                    <Building2 className="w-4 h-4" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">
-                    Alta Descentralitzada de Centres
+                  <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">
+                    Alta Descentralitzada Centres
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-[11px] text-slate-300 leading-snug mb-2">
                     Configuració i alta jeràrquica de CAPs, hospitals i entitats per cada gerència territorial.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-purple-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-[11px] font-bold text-purple-300 pt-1.5 border-t border-white/10">
                   <span>Gestionar Centres</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={12} />
                 </div>
               </GlassCard>
 
@@ -481,23 +484,23 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
-                className="p-5 flex flex-col justify-between"
+                className="p-3 sm:p-3.5 flex flex-col justify-between"
                 onClick={() => setActiveWorkspace('roles-services')}
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
-                    <Users className="w-6 h-6" />
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white mb-2 shadow-md border border-white/20">
+                    <Users className="w-4 h-4" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">
                     Rols, Serveis i Puestos
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <p className="text-[11px] text-slate-300 leading-snug mb-2">
                     Superadministració del catàleg de serveis, rols RBAC i estructura de llocs de treball.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-indigo-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-[11px] font-bold text-indigo-300 pt-1.5 border-t border-white/10">
                   <span>Configurar Rols</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={12} />
                 </div>
               </GlassCard>
 
@@ -505,7 +508,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
-                className="p-5 flex flex-col justify-between"
+                className="p-3 sm:p-3.5 flex flex-col justify-between"
                 onClick={() =>
                   requestSensitiveAction(
                     'AUDIT_LAB_NETWORK',
@@ -516,19 +519,19 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 }
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 via-amber-600 to-emerald-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
-                    <Shield className="w-6 h-6" />
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-600 via-amber-600 to-emerald-600 flex items-center justify-center text-white mb-2 shadow-md border border-white/20">
+                    <Shield className="w-4 h-4" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">
                     Stress & Security Lab
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
-                    Simulació de concurrència (1-3 anys Catalunya) i escaneig de vulnerabilitats en temps real (Score 99%).
+                  <p className="text-[11px] text-slate-300 leading-snug mb-2">
+                    Simulació de concurrència (fins a 250k ciutadans) i escaneig continu ENS (Score 99%).
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-300 pt-2 border-t border-white/10">
-                  <span>Obrir Laboratori (2FA)</span>
-                  <ArrowRight size={14} />
+                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-300 pt-1.5 border-t border-white/10">
+                  <span>Obrir Lab (2FA)</span>
+                  <ArrowRight size={12} />
                 </div>
               </GlassCard>
 
@@ -536,35 +539,35 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               <GlassCard
                 variant="interactive"
                 glowColor="purple"
-                className="p-5 flex flex-col justify-between"
+                className="p-3 sm:p-3.5 flex flex-col justify-between"
                 onClick={() => setActiveWorkspace('ai-agent')}
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white mb-3 shadow-lg border border-white/20">
-                    <Bot className="w-6 h-6" />
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white mb-2 shadow-md border border-white/20">
+                    <Bot className="w-4 h-4" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">
                     Consola Enginyer Agent IA
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3">
-                    Modificacions a demanda mitjançant prompts en llenguatge natural amb generació de diff i auditoria.
+                  <p className="text-[11px] text-slate-300 leading-snug mb-2">
+                    Modificacions a demanda mitjançant prompts en llenguatge natural amb generació de diff.
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold text-cyan-300 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between text-[11px] font-bold text-cyan-300 pt-1.5 border-t border-white/10">
                   <span>Executar Agent</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={12} />
                 </div>
               </GlassCard>
             </div>
 
             {/* Launcher Embolicat per saltar a altres aplicacions */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Grid size={18} className="text-cyan-400" />
+            <div className="mt-4 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <Grid size={15} className="text-cyan-400" />
                   Ecosistema de Micro-Aplicacions BancActiu 3.0
                 </h3>
-                <span className="text-xs text-slate-400">
+                <span className="text-[10px] text-slate-400">
                   Base de Dades Compartida (@bancactiu/db)
                 </span>
               </div>

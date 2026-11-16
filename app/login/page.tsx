@@ -36,6 +36,27 @@ function LoginForm() {
   // Mode d'autenticació: credentials / certificate
   const [authMode, setAuthMode] = useState<'credentials' | 'certificate'>('credentials');
 
+  // Neteja imperativa d'estat residual en carregar /login (Elimina vulnerabilitat d'autologin)
+  React.useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        // Netejar sessionStorage i claus residuals de sessió a localStorage
+        sessionStorage.clear();
+        localStorage.removeItem('bancactiu_session_cache');
+        localStorage.removeItem('bancactiu_user');
+        localStorage.removeItem('bancactiu_auth_state');
+
+        // Invalidar de forma imperativa la cookie de sessió residual
+        document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
+      }
+
+      // Notificar al backend la neteja de la cookie bancactiu_session
+      fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+    } catch (e) {
+      console.warn('[LOGIN-CLEANUP] Error netejant estat residual:', e);
+    }
+  }, []);
+
   // Camps obligatòriament buits per requisit estricte de seguretat (sense valors per defecte)
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -181,7 +202,7 @@ function LoginForm() {
 
         {/* VISTA 1: Formulari de Primer Inici (First-Time Password Setup) */}
         {isFirstTimeSetup ? (
-          <form onSubmit={handleSetupPassword} className="space-y-4">
+          <form onSubmit={handleSetupPassword} autoComplete="off" data-lpignore="true" className="space-y-4">
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200">
               Usuari vinculat: <strong className="font-mono text-white">{targetDni || 'ADMINISTRADOR'}</strong>
             </div>
@@ -196,7 +217,8 @@ function LoginForm() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  autoComplete="new-password"
+                  autoComplete="off"
+                  data-lpignore="true"
                   placeholder="Introduïu una contrasenya robusta"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-slate-500 pr-10"
                 />
@@ -219,7 +241,8 @@ function LoginForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                autoComplete="new-password"
+                autoComplete="off"
+                data-lpignore="true"
                 placeholder="Repetiu la contrasenya"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-slate-500"
               />
@@ -303,7 +326,7 @@ function LoginForm() {
             </div>
 
             {authMode === 'credentials' ? (
-              <form onSubmit={(e) => handleLogin(e, 'credentials')} className="space-y-3 sm:space-y-3.5">
+              <form onSubmit={(e) => handleLogin(e, 'credentials')} autoComplete="off" data-lpignore="true" className="space-y-3 sm:space-y-3.5">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">
                     DNI del Superadministrador
@@ -314,6 +337,7 @@ function LoginForm() {
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
                     autoComplete="off"
+                    data-lpignore="true"
                     placeholder="ex: 48956602Z o Administrador"
                     className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600 uppercase"
                   />
@@ -336,6 +360,7 @@ function LoginForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="off"
+                    data-lpignore="true"
                     placeholder="Introdueixi la seva contrasenya"
                     className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600"
                   />

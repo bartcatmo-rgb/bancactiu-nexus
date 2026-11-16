@@ -103,10 +103,11 @@ export function middleware(request: NextRequest) {
     return applyTenantHeaders(redirectRes);
   }
 
-  // 5. Si ja té sessió vàlida i intenta anar a /login, redirigir al panell
-  if (pathname === '/login' && isValidSession) {
-    const homeRes = NextResponse.redirect(new URL('/', request.url));
-    return applyTenantHeaders(homeRes);
+  // 5. Quan s'accedeix a /login, es permet sempre per evitar bucles d'autologin
+  // i es neteja la sessió prèvia si es demana reinici net.
+  if (pathname === '/login') {
+    const loginRes = NextResponse.next();
+    return applyTenantHeaders(loginRes);
   }
 
   const defaultRes = NextResponse.next();
