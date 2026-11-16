@@ -3,8 +3,8 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BancActiu Nexus - BancActiu 2.0",
-  description: "BancActiu 2.0 - Plataforma Unificada de Governança i Serveis Sociosanitaris (Zero-Trust & ENS Nivell Alt)",
+  title: "BancActiu Nexus 3.0 Enterprise",
+  description: "BancActiu 3.0 Enterprise - Plataforma Unificada de Governança i Serveis Sociosanitaris (Zero-Trust & ENS Nivell Alt)",
 };
 
 export default function RootLayout({

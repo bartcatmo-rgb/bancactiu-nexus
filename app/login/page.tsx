@@ -143,21 +143,21 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md">
-      <GlassCard variant="glow" glowColor="purple" className="p-6 sm:p-8 backdrop-blur-2xl">
+    <div className="w-full max-w-md my-auto">
+      <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6 backdrop-blur-2xl">
         {/* Capçalera de la Targeta */}
-        <div className="text-center mb-6">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 mb-3 shadow-inner">
+        <div className="text-center mb-4 sm:mb-5">
+          <div className="inline-flex p-2.5 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 mb-2 shadow-inner">
             {isFirstTimeSetup ? (
-              <Key className="w-8 h-8 text-amber-300 animate-pulse" />
+              <Key className="w-6 h-6 sm:w-7 sm:h-7 text-amber-300 animate-pulse" />
             ) : (
-              <Lock className="w-8 h-8 text-cyan-300" />
+              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-300" />
             )}
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
             {isFirstTimeSetup ? 'Configuració Inicial de Clau' : 'Gateway Launcher Nexus'}
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
             {isFirstTimeSetup
               ? 'Definiu la contrasenya personal per al compte d\'administració'
               : 'Accés autenticat per a personal acreditat i governança perimetral'}
@@ -166,15 +166,15 @@ function LoginForm() {
 
         {/* Missatges d'estat */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2">
-            <AlertCircle size={16} className="shrink-0 text-rose-400" />
+          <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0 text-rose-400" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2">
-            <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+          <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2">
+            <CheckCircle2 size={15} className="shrink-0 text-emerald-400" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -275,11 +275,11 @@ function LoginForm() {
           /* VISTA 2: Formulari Estàndard d'Inici de Sessió (Sense Autofill) */
           <>
             {/* Selector de mètode: Credencials o Certificat */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-white/5 rounded-xl border border-white/10 mb-5">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-white/5 rounded-xl border border-white/10 mb-3 sm:mb-4">
               <button
                 type="button"
                 onClick={() => setAuthMode('credentials')}
-                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'credentials'
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
@@ -291,7 +291,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setAuthMode('certificate')}
-                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'certificate'
                     ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
@@ -303,9 +303,9 @@ function LoginForm() {
             </div>
 
             {authMode === 'credentials' ? (
-              <form onSubmit={(e) => handleLogin(e, 'credentials')} className="space-y-4">
+              <form onSubmit={(e) => handleLogin(e, 'credentials')} className="space-y-3 sm:space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
                     DNI del Superadministrador
                   </label>
                   <input
@@ -315,15 +315,15 @@ function LoginForm() {
                     required
                     autoComplete="off"
                     placeholder="ex: 48956602Z o Administrador"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600 uppercase"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600 uppercase"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Identificació per DNI acreditat (<span className="font-mono text-cyan-300">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-300">Administrador</span>)
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Identificació per DNI (<span className="font-mono text-cyan-300">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-300">Administrador</span>)
                   </p>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
+                  <div className="flex justify-between items-center mb-1">
                     <label className="block text-xs font-medium text-slate-300">
                       Clau d'Accés
                     </label>
@@ -337,7 +337,7 @@ function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="off"
                     placeholder="Introdueixi la seva contrasenya"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/70 border border-white/15 text-white text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600"
                   />
                 </div>
 
@@ -345,14 +345,14 @@ function LoginForm() {
                   type="submit"
                   variant="primary"
                   disabled={isLoading || !identifier.trim()}
-                  className="w-full justify-center py-2.5 mt-2"
+                  className="w-full justify-center py-2 mt-1 sm:mt-2"
                   icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <ArrowRight size={16} />}
                 >
                   {isLoading ? 'Verificant Identitat...' : 'Iniciar Sessió Segura'}
                 </GlassButton>
 
                 {/* Opció per establir primer inici */}
-                <div className="pt-3 border-t border-white/10 text-center">
+                <div className="pt-2 border-t border-white/10 text-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -363,24 +363,21 @@ function LoginForm() {
                     }}
                     className="text-xs text-amber-300 hover:text-amber-200 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
                   >
-                    <Key size={13} />
+                    <Key size={12} />
                     Primer accés? Definiu la vostra contrasenya inicial
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-4 text-center">
-                <div className="p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-left space-y-2">
+              <div className="space-y-3 text-center">
+                <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-left space-y-1.5">
                   <div className="flex items-center gap-2 text-cyan-300 text-xs font-bold">
-                    <FileCheck2 size={16} />
+                    <FileCheck2 size={15} />
                     Certificats Digitals Oficials Admesos
                   </div>
                   <p className="text-[11px] text-slate-300 leading-relaxed">
-                    S'ha detectat la presència de dispositius de signatura electrònica vàlids (idCAT, T-CAT corporatiu de Salut, DNI Electrònic o Cl@ve).
+                    Dispositius de signatura electrònica vàlids (idCAT, T-CAT corporatiu de Salut, DNI Electrònic o Cl@ve).
                   </p>
-                  <div className="pt-2 border-t border-cyan-500/20 text-[10px] text-cyan-200 font-mono">
-                    Certificat digital d'empleat públic (T-CAT) o ciutadà acreditat (idCAT / DNIe)
-                  </div>
                 </div>
 
                 <GlassButton
@@ -388,7 +385,7 @@ function LoginForm() {
                   variant="primary"
                   disabled={isLoading}
                   onClick={() => handleLogin(undefined, 'certificate')}
-                  className="w-full justify-center py-2.5"
+                  className="w-full justify-center py-2"
                   icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
                 >
                   {isLoading ? 'Autenticant via Certificat...' : 'Validar Certificat Digital'}
@@ -400,7 +397,7 @@ function LoginForm() {
       </GlassCard>
 
       {/* Avís Legal de Seguretat */}
-      <div className="mt-4 p-3 rounded-xl bg-slate-900/50 border border-white/5 backdrop-blur-md text-[10px] text-slate-400 text-center">
+      <div className="mt-2.5 p-2 rounded-xl bg-slate-900/50 border border-white/5 backdrop-blur-md text-[9px] sm:text-[10px] text-slate-400 text-center leading-tight">
         Sistema protegit per arquitectura Zero-Trust i registre d'auditoria continu (Llei 39/2015 i RGPD). Qualsevol accés no autoritzat serà bloquejat i auditat pel sistema perimetral.
       </div>
     </div>
@@ -447,24 +444,24 @@ export default function BancActiuLoginPage() {
   const tenant = useTenantContext();
 
   return (
-    <RadialAuraBackground variant="nexus">
-      <div className="min-h-screen w-full flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+    <RadialAuraBackground variant="nexus" className="h-screen w-screen overflow-hidden">
+      <div className="h-full w-full max-h-screen overflow-hidden flex flex-col justify-between p-3 sm:p-5 select-none">
         {/* Capçalera d'accés institucional dinàmica */}
-        <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-4 border-b border-white/10">
+        <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-2 sm:pb-3 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-white/20">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-white/20">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black text-white tracking-tight">
+                <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
                   BancActiu <span className="text-cyan-400">3.0</span>
                 </h1>
                 <GlassBadge variant={tenant.badgeVariant || 'purple'} pulse>
                   {tenant.isDefault ? "Porta d'Accés Segura" : tenant.badgeLabel}
                 </GlassBadge>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400">
                 {tenant.isDefault
                   ? "Plataforma de Governança i Serveis Sociosanitaris"
                   : `${tenant.name} · Accés Autoritzat`}
@@ -488,7 +485,7 @@ export default function BancActiuLoginPage() {
         </header>
 
         {/* Zona Central amb Suspense boundary */}
-        <main className="flex-1 flex items-center justify-center my-6">
+        <main className="flex-1 flex items-center justify-center py-1 sm:py-2 overflow-hidden">
           <Suspense fallback={
             <div className="text-white text-sm animate-pulse flex items-center gap-2">
               <Shield className="w-5 h-5 text-purple-400 animate-spin" />
@@ -500,7 +497,7 @@ export default function BancActiuLoginPage() {
         </main>
 
         {/* Peu de pàgina neutre */}
-        <footer className="text-center text-xs text-slate-500 pt-4 border-t border-white/10">
+        <footer className="text-center text-[10px] sm:text-xs text-slate-500 pt-2 border-t border-white/10 shrink-0">
           BancActiu Nexus 3.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; {tenant.isDefault ? "Arquitectura Distribuïda" : tenant.shortName}
         </footer>
       </div>
