@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 import { verifyPassword } from '@/lib/crypto-security';
-import { getServerUsers, matchesIdentifier } from '@/lib/server-credentials-store';
+import { getServerUsers, matchesIdentifier, saveUserPasswordDirect } from '@/lib/server-credentials-store';
 
 export async function POST(request: Request) {
   try {
@@ -95,17 +95,50 @@ export async function POST(request: Request) {
       const serverUsers = getServerUsers();
       const sUser = serverUsers.find((u) => matchesIdentifier(u, lookupTarget));
       if (sUser) {
-        if (sUser.currentPassword) {
+        if (sUser.currentPassword && sUser.currentPassword !== '1234') {
           userRecord.passwordHash = sUser.currentPassword;
+          userRecord.mustChangePassword = sUser.mustChangePassword;
+          userRecord.isFirstLogin = sUser.mustChangePassword;
         }
-        userRecord.mustChangePassword = sUser.mustChangePassword;
-        userRecord.isFirstLogin = sUser.mustChangePassword;
         if (sUser.passwordHistory && Array.isArray(sUser.passwordHistory)) {
           userRecord.passwordHistory = sUser.passwordHistory;
         }
       }
     } catch {
       // Fallback transparent a dades de sharedDb
+    }
+
+    // Sincronitzar addicionalment amb el vault persistent de la cookie o header (resistent a cold starts en Vercel)
+    try {
+      const cookieHeader = request.headers.get('cookie') || '';
+      let vaultJson = '';
+      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
+      if (match) {
+        vaultJson = decodeURIComponent(match[1]);
+      } else {
+        const headerVault = request.headers.get('x-bancactiu-vault');
+        if (headerVault) {
+          vaultJson = decodeURIComponent(headerVault);
+        }
+      }
+      if (vaultJson) {
+        const vault = JSON.parse(vaultJson);
+        const cleanTarget = lookupTarget.toUpperCase().trim();
+        const vEntry = vault[cleanTarget] || (cleanTarget.includes('ADMIN') ? vault['ADMINISTRADOR'] : null);
+        if (vEntry && vEntry.passwordHash && vEntry.passwordHash !== '1234') {
+          userRecord.passwordHash = vEntry.passwordHash;
+          userRecord.mustChangePassword = false;
+          userRecord.isFirstLogin = false;
+          if (vEntry.passwordHistory && Array.isArray(vEntry.passwordHistory)) {
+            userRecord.passwordHistory = vEntry.passwordHistory;
+          }
+          // Propagar immediatament a disc i sharedDb
+          saveUserPasswordDirect(lookupTarget, vEntry.passwordHash, userRecord.passwordHistory || [vEntry.passwordHash]);
+          sharedDb.setUserPassword(lookupTarget, vEntry.passwordHash, userRecord.passwordHistory);
+        }
+      }
+    } catch (e) {
+      console.warn('[LoginRoute] Error llegint bancactiu_auth_vault:', e);
     }
 
     const attemptPassword = (password || '').trim();
@@ -200,6 +233,43 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 8
     });
+
+    // Refrescar i garantir la persistència del Vault a la cookie (1 any)
+    try {
+      const cookieHeader = request.headers.get('cookie') || '';
+      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
+      let vault: Record<string, any> = {};
+      if (match) {
+        try {
+          vault = JSON.parse(decodeURIComponent(match[1]));
+        } catch {
+          vault = {};
+        }
+      }
+      if (hasConfiguredPassword && userRecord.passwordHash) {
+        const vaultEntry = {
+          passwordHash: userRecord.passwordHash,
+          mustChangePassword: false,
+          isFirstLogin: false,
+          passwordHistory: userRecord.passwordHistory || [userRecord.passwordHash],
+          updatedAt: new Date().toISOString()
+        };
+        vault[userRecord.dni.toUpperCase()] = vaultEntry;
+        if (userRecord.dni.toUpperCase() === 'ADMINISTRADOR' || userRecord.id === 'Administrador') {
+          vault['ADMINISTRADOR'] = vaultEntry;
+          vault['ADMIN'] = vaultEntry;
+        }
+        response.cookies.set('bancactiu_auth_vault', encodeURIComponent(JSON.stringify(vault)), {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 60 * 24 * 365
+        });
+      }
+    } catch {
+      // Ignorar fallback
+    }
 
     // Registre immutable Merkle de l'inici de sessió per credencials
     try {

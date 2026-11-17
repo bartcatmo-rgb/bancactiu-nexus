@@ -88,6 +88,28 @@ export async function POST(request: Request) {
       history.push('1234');
     }
 
+    // Comprovar també amb l'historial del vault persistent de la cookie si existeix
+    try {
+      const cookieHeader = request.headers.get('cookie') || '';
+      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
+      if (match) {
+        const vault = JSON.parse(decodeURIComponent(match[1]));
+        const vEntry = vault[normalizedDni] || (normalizedDni.includes('ADMIN') ? vault['ADMINISTRADOR'] : null);
+        if (vEntry?.passwordHistory && Array.isArray(vEntry.passwordHistory)) {
+          for (const h of vEntry.passwordHistory) {
+            if (h && !history.includes(h)) {
+              history.push(h);
+            }
+          }
+        }
+        if (vEntry?.passwordHash && !history.includes(vEntry.passwordHash)) {
+          history.unshift(vEntry.passwordHash);
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
     const matchesPrevious = history.slice(0, 10).some((prevHash) => {
       if (!prevHash) return false;
       return verifyPassword(newPassword.trim(), prevHash);
@@ -137,9 +159,45 @@ export async function POST(request: Request) {
       loginTime: new Date().toISOString(),
     };
 
+    // Actualitzar i persistir el Vault de credencials segures a la cookie perenne (resistent a cold starts en Vercel)
+    let vault: Record<string, any> = {};
+    try {
+      const cookieHeader = request.headers.get('cookie') || '';
+      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
+      if (match) {
+        try {
+          vault = JSON.parse(decodeURIComponent(match[1]));
+        } catch {
+          vault = {};
+        }
+      }
+      const headerVault = request.headers.get('x-bancactiu-vault');
+      if (headerVault) {
+        try {
+          const parsedH = JSON.parse(headerVault);
+          vault = { ...vault, ...parsedH };
+        } catch {}
+      }
+      const vaultEntry = {
+        passwordHash: newHash,
+        mustChangePassword: false,
+        isFirstLogin: false,
+        passwordHistory: updatedHistory,
+        updatedAt: new Date().toISOString(),
+      };
+      vault[normalizedDni] = vaultEntry;
+      if (normalizedDni === 'ADMINISTRADOR' || normalizedDni === 'ADMIN') {
+        vault['ADMINISTRADOR'] = vaultEntry;
+        vault['ADMIN'] = vaultEntry;
+      }
+    } catch (e) {
+      console.warn('[SetupPassword] Error preparant vault:', e);
+    }
+
     const response = NextResponse.json({
       success: true,
       user: authenticatedUser,
+      vault,
       message: `Contrasenya per a l'usuari ${user.nomComplet} configurada correctament. Accés autoritzat.`
     });
 
@@ -151,6 +209,14 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 8
+    });
+
+    response.cookies.set('bancactiu_auth_vault', encodeURIComponent(JSON.stringify(vault)), {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365, // 1 any de persistència
     });
 
     return response;

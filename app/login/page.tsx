@@ -141,10 +141,20 @@ function LoginForm() {
 
     const mode = customMode || authMode;
 
+    let vaultHeader = '';
+    try {
+      if (typeof window !== 'undefined') {
+        vaultHeader = localStorage.getItem('bancactiu_auth_vault') || '';
+      }
+    } catch {}
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(vaultHeader ? { 'x-bancactiu-vault': encodeURIComponent(vaultHeader) } : {})
+        },
         body: JSON.stringify({
           authMethod: mode,
           identifier: identifier.trim(),
@@ -199,6 +209,11 @@ function LoginForm() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        if (data.vault && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('bancactiu_auth_vault', JSON.stringify(data.vault));
+          } catch {}
+        }
         setSuccessMsg('Contrasenya configurada amb èxit. Accedint al sistema...');
         setTimeout(() => {
           window.location.href = redirectPath;

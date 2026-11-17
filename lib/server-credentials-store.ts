@@ -16,11 +16,12 @@ declare global {
   var __bancactiu_server_users__: SystemUser[] | undefined;
 }
 
-const PRIMARY_DATA_DIR = path.join(process.cwd(), 'data');
-const PRIMARY_DB_FILE = path.join(PRIMARY_DATA_DIR, 'db_credentials_users.json');
-
-const TMP_DATA_DIR = path.join(os.tmpdir(), 'bancactiu_data');
-const TMP_DB_FILE = path.join(TMP_DATA_DIR, 'db_credentials_users.json');
+const CANDIDATE_DIRS = [
+  path.join(os.homedir(), '.bancactiu'),
+  path.join(os.tmpdir(), 'bancactiu_data'),
+  path.join(process.cwd(), 'data'),
+  path.join(process.cwd(), 'apps', 'bancactiu-nexus', 'data'),
+];
 
 /**
  * Funció de concordança d'identificador estricta i sense col·lisions
@@ -63,34 +64,43 @@ export function sanitizeUser(user: SystemUser): Omit<SystemUser, 'currentPasswor
  */
 export function getServerUsers(): SystemUser[] {
   try {
-    // 1. Si ja tenim memòria viva a la instància/procés Node.js
+    // 1. Si ja tenim memòria viva a la instància/procés Node.js amb contrasenyes actualitzades
     if (globalThis.__bancactiu_server_users__ && globalThis.__bancactiu_server_users__.length > 0) {
-      return globalThis.__bancactiu_server_users__;
+      const hasCustomPassInMemory = globalThis.__bancactiu_server_users__.some(
+        (u) => u.mustChangePassword === false && u.currentPassword && u.currentPassword !== '1234'
+      );
+      if (hasCustomPassInMemory) {
+        return globalThis.__bancactiu_server_users__;
+      }
     }
 
     let parsed: SystemUser[] | null = null;
 
-    // 2. Comprovar fitxer a /tmp (on s'escriuen les actualitzacions a Vercel Serverless)
-    if (fs.existsSync(TMP_DB_FILE)) {
-      try {
-        const tmpContent = fs.readFileSync(TMP_DB_FILE, 'utf-8');
-        parsed = JSON.parse(tmpContent) as SystemUser[];
-      } catch (err) {
-        console.warn('[ServerCredentialsStore] Error llegint TMP_DB_FILE:', err);
+    // 2. Cercar a tots els directoris candidats un fitxer amb contrasenyes personalitzades guardades
+    for (const dir of CANDIDATE_DIRS) {
+      const candidateFile = path.join(dir, 'db_credentials_users.json');
+      if (fs.existsSync(candidateFile)) {
+        try {
+          const content = fs.readFileSync(candidateFile, 'utf-8');
+          const list = JSON.parse(content) as SystemUser[];
+          if (Array.isArray(list) && list.length > 0) {
+            const hasCustom = list.some(
+              (u) => u.mustChangePassword === false && u.currentPassword && u.currentPassword !== '1234'
+            );
+            if (hasCustom) {
+              parsed = list;
+              break; // Trobada la versió més recent amb contrasenyes personalitzades
+            } else if (!parsed) {
+              parsed = list;
+            }
+          }
+        } catch (err) {
+          console.warn(`[ServerCredentialsStore] Error llegint ${candidateFile}:`, err);
+        }
       }
     }
 
-    // 3. Fallback a fitxer primari al bundle de l'aplicació
-    if (!parsed && fs.existsSync(PRIMARY_DB_FILE)) {
-      try {
-        const primContent = fs.readFileSync(PRIMARY_DB_FILE, 'utf-8');
-        parsed = JSON.parse(primContent) as SystemUser[];
-      } catch (err) {
-        console.warn('[ServerCredentialsStore] Error llegint PRIMARY_DB_FILE:', err);
-      }
-    }
-
-    // 4. Si no hi ha cap fitxer de persistència, inicialitzar amb els usuaris de base
+    // 3. Si no hi ha cap fitxer de persistència, inicialitzar amb els usuaris de base
     if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
       parsed = INITIAL_SYSTEM_USERS.map((u) => ({
         ...u,
@@ -100,7 +110,7 @@ export function getServerUsers(): SystemUser[] {
       }));
     }
 
-    // 5. Garantir que els comptes claus existeixin sempre (Administrador, 52622304Y, 48956602Z)
+    // 4. Garantir que els comptes claus existeixin sempre (Administrador, 52622304Y, 48956602Z)
     const criticalAccounts = ['ADMINISTRADOR', '52622304Y', '48956602Z'];
     for (const crit of criticalAccounts) {
       const exists = parsed.some((u) => matchesIdentifier(u, crit));
@@ -134,30 +144,22 @@ export function getServerUsers(): SystemUser[] {
 }
 
 /**
- * Desa la col·lecció d'usuaris tant en memòria global com a disc (tmp i primary)
+ * Desa la col·lecció d'usuaris tant en memòria global com a tots els directoris candidats persistents
  */
 export function saveServerUsers(users: SystemUser[]): void {
   try {
     globalThis.__bancactiu_server_users__ = users;
 
-    // Escriure a directori temporal (/tmp)
-    try {
-      if (!fs.existsSync(TMP_DATA_DIR)) {
-        fs.mkdirSync(TMP_DATA_DIR, { recursive: true });
+    for (const dir of CANDIDATE_DIRS) {
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        const filePath = path.join(dir, 'db_credentials_users.json');
+        fs.writeFileSync(filePath, JSON.stringify(users, null, 2), 'utf-8');
+      } catch {
+        // En entorns de només lectura (com Vercel Serverless /var/task), continua amb els directoris escrivibles
       }
-      fs.writeFileSync(TMP_DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
-    } catch (tmpErr) {
-      console.warn('[ServerCredentialsStore] No es pot escriure a TMP_DB_FILE:', tmpErr);
-    }
-
-    // Intentar escriure a primary (local dev / Docker)
-    try {
-      if (!fs.existsSync(PRIMARY_DATA_DIR)) {
-        fs.mkdirSync(PRIMARY_DATA_DIR, { recursive: true });
-      }
-      fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
-    } catch {
-      // Normal a entorns de només lectura (Vercel Serverless)
     }
   } catch (error) {
     console.error('[ServerCredentialsStore] Error desant usuaris al servidor:', error);
