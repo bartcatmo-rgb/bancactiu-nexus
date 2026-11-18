@@ -70,9 +70,13 @@ function LoginForm() {
         localStorage.removeItem('bancactiu_session_cache');
         localStorage.removeItem('bancactiu_user');
         localStorage.removeItem('bancactiu_auth_state');
+        localStorage.removeItem('bancactiu_security_users_cornella_v1');
+        localStorage.removeItem('bancactiu_usuaris_cornella_v1');
+        localStorage.removeItem('bancactiu_auth_vault');
 
         // Invalidar de forma imperativa la cookie de sessió residual
         document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
+        document.cookie = 'bancactiu_auth_vault=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
       }
 
       // Notificar al backend la neteja de la cookie bancactiu_session
@@ -167,7 +171,7 @@ function LoginForm() {
       if (res.ok && data.success) {
         // Comprovar si el Superadmin requereix configurar la contrasenya inicial (First-Time Setup)
         if (data.requirePasswordSetup) {
-          setTargetDni(data.dni || identifier.trim().toUpperCase() || '48956602Z');
+          setTargetDni(data.dni || identifier.trim().toUpperCase() || '');
           setIsFirstTimeSetup(true);
           setSuccessMsg(data.message || 'Primer accés detectat. Definiu la vostra contrasenya segura.');
           return;
@@ -177,6 +181,11 @@ function LoginForm() {
         window.location.href = redirectPath;
       } else {
         setErrorMsg(data.error || 'Credencials no vàlides. Verifiqueu les dades.');
+        if (data.triggerHoneypot) {
+          setTimeout(() => {
+            window.location.href = '/honeypot';
+          }, 1500);
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error de connexió amb el servidor d\'autenticació.');
@@ -200,7 +209,7 @@ function LoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dni: targetDni || '48956602Z',
+          dni: targetDni || identifier.trim().toUpperCase() || '',
           newPassword,
           confirmPassword
         })
@@ -233,11 +242,16 @@ function LoginForm() {
       <GlassCard variant="glow" glowColor="purple" className="p-4 sm:p-6 backdrop-blur-2xl bg-white/95">
         {/* Capçalera de la Targeta */}
         <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex p-2.5 rounded-2xl bg-gradient-to-br from-purple-50 to-cyan-50 border border-purple-200 mb-2 shadow-sm">
+          <div className="flex justify-center mb-3">
+            <div className="h-12 px-4 py-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+              <img src="/bancactiu_logo.svg" alt="BancActiu" className="h-8 w-auto object-contain" />
+            </div>
+          </div>
+          <div className="inline-flex p-2 rounded-xl bg-gradient-to-br from-purple-50 to-cyan-50 border border-purple-200 mb-1.5 shadow-sm">
             {isFirstTimeSetup ? (
-              <Key className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 animate-pulse" />
+              <Key className="w-5 h-5 text-amber-600 animate-pulse" />
             ) : (
-              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600" />
+              <Lock className="w-5 h-5 text-cyan-600" />
             )}
           </div>
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
@@ -268,9 +282,11 @@ function LoginForm() {
         {/* VISTA 1: Formulari de Primer Inici (First-Time Password Setup) */}
         {isFirstTimeSetup ? (
           <form onSubmit={handleSetupPassword} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" data-form-type="other" className="space-y-4">
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
-              Usuari vinculat: <strong className="font-mono text-slate-900">{targetDni || 'ADMINISTRADOR'}</strong>
-            </div>
+            {targetDni && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                Usuari vinculat: <strong className="font-mono text-slate-900">{targetDni}</strong>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -279,19 +295,20 @@ function LoginForm() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  name="bancactiu_new_pwd"
+                  name="random_new_pwd_not_saved"
+                  id="random_new_pwd_not_saved"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   readOnly
                   onFocus={(e) => e.target.removeAttribute('readOnly')}
-                  autoComplete="new-password"
+                  autoComplete="off"
                   autoCapitalize="off"
                   spellCheck={false}
                   data-lpignore="true"
                   data-form-type="other"
-                  placeholder="Introduïu una contrasenya robusta"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-400 pr-10"
+                  placeholder=""
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all pr-10"
                 />
                 <button
                   type="button"
@@ -309,19 +326,20 @@ function LoginForm() {
               </label>
               <input
                 type={showPassword ? 'text' : 'password'}
-                name="bancactiu_confirm_pwd"
+                name="random_confirm_pwd_not_saved"
+                id="random_confirm_pwd_not_saved"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 readOnly
                 onFocus={(e) => e.target.removeAttribute('readOnly')}
-                autoComplete="new-password"
+                autoComplete="off"
                 autoCapitalize="off"
                 spellCheck={false}
                 data-lpignore="true"
                 data-form-type="other"
-                placeholder="Repetiu la contrasenya"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-400"
+                placeholder=""
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all"
               />
             </div>
 
@@ -406,19 +424,15 @@ function LoginForm() {
 
             {!idCatMovilActive || authMode === 'credentials' ? (
               <form onSubmit={(e) => handleLogin(e, 'credentials')} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" data-form-type="other" className="space-y-3 sm:space-y-3.5">
-                {/* Dummy decoy inputs per desorientar el gestor de contrasenyes del navegador */}
-                <input type="text" name="fakeusernameremembered" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-                <input type="password" name="fakepasswordremembered" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    DNI del Superadministrador
+                    Identificador d'Accés
                   </label>
                   <input
                     ref={identifierInputRef}
                     type="text"
-                    name="bancactiu_dni_identity"
-                    id="bancactiu_dni_identity"
+                    name="random_identifier_field_not_saved"
+                    id="random_identifier_field_not_saved"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
@@ -429,12 +443,9 @@ function LoginForm() {
                     spellCheck={false}
                     data-lpignore="true"
                     data-form-type="other"
-                    placeholder="ex: 48956602Z o Administrador"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-400 uppercase"
+                    placeholder=""
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all uppercase"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">
-                    Identificació per DNI (<span className="font-mono text-cyan-700 font-semibold">48956602Z</span>) o usuari docent (<span className="font-mono text-cyan-700 font-semibold">Administrador</span>)
-                  </p>
                 </div>
 
                 <div>
@@ -449,8 +460,8 @@ function LoginForm() {
                   <input
                     ref={passwordInputRef}
                     type="password"
-                    name="bancactiu_sec_pwd"
-                    id="bancactiu_sec_pwd"
+                    name="random_secret_field_not_saved"
+                    id="random_secret_field_not_saved"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     readOnly
@@ -460,8 +471,8 @@ function LoginForm() {
                     spellCheck={false}
                     data-lpignore="true"
                     data-form-type="other"
-                    placeholder="Introdueixi la seva contrasenya"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-400"
+                    placeholder=""
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all"
                   />
                 </div>
 
@@ -480,7 +491,11 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => {
-                      setTargetDni(identifier.trim() || 'ADMINISTRADOR');
+                      if (!identifier.trim()) {
+                        setErrorMsg("Cal indicar el vostre identificador d'accés abans de configurar la clau inicial.");
+                        return;
+                      }
+                      setTargetDni(identifier.trim().toUpperCase());
                       setIsFirstTimeSetup(true);
                       setErrorMsg(null);
                       setSuccessMsg('Configuració de primer accés. Definiu una nova contrasenya segura.');
@@ -573,8 +588,8 @@ export default function BancActiuLoginPage() {
         {/* Capçalera d'accés institucional dinàmica */}
         <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-2 sm:pb-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-white/20">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200 p-1 shrink-0 overflow-hidden">
+              <img src="/bancactiu_icon.svg" alt="BancActiu" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">

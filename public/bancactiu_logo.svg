@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="logoTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="100%" stop-color="#0F766E" />
+    </linearGradient>
+
+    <linearGradient id="logoCoral" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+
+    <linearGradient id="logoBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.1" />
+    </filter>
+  </defs>
+
+  <!-- ISOTYPE SYMBOL (Left) -->
+  <g transform="translate(90, 90)" filter="url(#subtleShadow)">
+    <!-- Outer Care Arc -->
+    <path d="M -55,20 C -75,-15 -55,-60 -10,-70 C 25,-77 60,-55 70,-20" 
+          fill="none" 
+          stroke="url(#logoBlue)" 
+          stroke-width="16" 
+          stroke-linecap="round" />
+
+    <!-- Active Mobility Curve -->
+    <path d="M -65,25 C -50,70 10,82 45,60 C 72,42 77,5 62,-30" 
+          fill="none" 
+          stroke="url(#logoTeal)" 
+          stroke-width="16" 
+          stroke-linecap="round" />
+
+    <!-- Dynamic Coral Spark -->
+    <path d="M -20,-15 C 5,-40 40,-20 30,15 C 22,42 -20,55 -30,30" 
+          fill="none" 
+          stroke="url(#logoCoral)" 
+          stroke-width="13" 
+          stroke-linecap="round" />
+
+    <!-- Figure Head -->
+    <circle cx="10" cy="-30" r="14" fill="url(#logoCoral)" />
+    
+    <!-- Autonomy Accent -->
+    <circle cx="48" cy="-52" r="7" fill="#14B8A6" />
+  </g>
+
+  <!-- TYPOGRAPHY (Right) -->
+  <g transform="translate(195, 105)">
+    <!-- "Banc" -->
+    <text x="0" y="0" 
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+          font-size="64" 
+          font-weight="700" 
+          fill="#1E293B" 
+          letter-spacing="-1">Banc</text>
+
+    <!-- "Actiu" -->
+    <text x="156" y="0" 
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+          font-size="64" 
+          font-weight="800" 
+          fill="url(#logoTeal)" 
+          letter-spacing="-1">Actiu</text>
+
+    <!-- Coral Dot on 'i' in Actiu -->
+    <circle cx="281" cy="-44" r="7.5" fill="url(#logoCoral)" />
+
+    <!-- Baseline Tagline / Subtitle -->
+    <text x="4" y="32" 
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+          font-size="19" 
+          font-weight="500" 
+          fill="#64748B" 
+          letter-spacing="2">PRÉSTEC DE MATERIAL I AUTONOMIA</text>
+  </g>
+</svg>

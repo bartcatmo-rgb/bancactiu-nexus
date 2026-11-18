@@ -5,6 +5,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BancActiu Nexus 3.0 Enterprise",
   description: "BancActiu 3.0 Enterprise - Plataforma Unificada de Governança i Serveis Sociosanitaris (Zero-Trust & ENS Nivell Alt)",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/bancactiu_icon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: ['/favicon.ico'],
+    apple: [
+      { url: '/bancactiu_icon.svg', type: 'image/svg+xml' }
+    ],
+  },
 };
 
 export default function RootLayout({

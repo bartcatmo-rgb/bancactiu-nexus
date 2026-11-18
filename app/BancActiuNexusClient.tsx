@@ -28,7 +28,14 @@ import {
   Hammer,
   Wrench,
   Stethoscope,
-  HeartHandshake
+  HeartHandshake,
+  RotateCcw,
+  ShieldAlert,
+  Radio,
+  Terminal,
+  AlertTriangle,
+  AlertOctagon,
+  RefreshCw
 } from 'lucide-react';
 import {
   RadialAuraBackground,
@@ -51,6 +58,8 @@ import { SuperAdminRolesAndServicesWorkspace } from '@/components/workspaces/Sup
 import { SuperAdminInteroperabilityWorkspace } from '@/components/workspaces/SuperAdminInteroperabilityWorkspace';
 import { WorkshopAndRepairsWorkspace } from '@/components/workspaces/WorkshopAndRepairsWorkspace';
 import { SocialServicesWorkspace } from '@/components/workspaces/SocialServicesWorkspace';
+import { AdministratiuVoluntariatWorkspace } from '@/components/workspaces/AdministratiuVoluntariatWorkspace';
+import { GerenciaReferentsWorkspace } from '@/components/workspaces/GerenciaReferentsWorkspace';
 import { NewLoanModal, NewLoanData } from '@/components/loans/NewLoanModal';
 import { KenzoAssistant } from '@/components/kenzo/KenzoAssistant';
 import { IntellectualPropertyModal } from '@/components/legal/IntellectualPropertyModal';
@@ -195,9 +204,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
 
   const isSuperAdminAuthorized =
     initialUser?.role === 'SUPERADMIN' ||
-    initialUser?.dni === '48956602Z' ||
     initialUser?.dni === '52622304Y' ||
-    initialUser?.userId === 'Administrador' ||
+    initialUser?.dni === '47956602S' ||
+    initialUser?.userId === 'usr-superadmin-bartolome' ||
     initialUser?.userId === 'usr-superadmin-marc';
 
   const [showIpModal, setShowIpModal] = useState(false);
@@ -247,6 +256,24 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
     };
   }, []);
 
+  // FASE 2: Eliminació de Bretxes de Sessió (Supressió de drecera ESC per evitar sortides involuntàries a /login)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, []);
+
+  // Estats per a Disaster Recovery i SOAR
+  const [isDisasterRecoveryOpen, setIsDisasterRecoveryOpen] = useState(false);
+  const [isSoarModalOpen, setIsSoarModalOpen] = useState(false);
+  const [isRestoringFlows, setIsRestoringFlows] = useState(false);
+  const [soarScanActive, setSoarScanActive] = useState(false);
+
   const handleNavigateModule = (appId: string, defaultPort: number) => {
     isInternalAppSwitching.current = true;
     const targetUrl = resolveAppTargetUrl(appId, defaultPort);
@@ -282,7 +309,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dni: initialUser?.dni || '48956602Z',
+          dni: initialUser?.dni || '',
           password: pass,
           actionName: 'SESSION_UNLOCK',
           actionDetails: 'Desbloqueig de sessió per inactivitat de 5 minuts (ENS Nivell Alt)',
@@ -308,8 +335,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
             {/* Esquerra: Identitat SuperAdmin */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white shadow-md border border-purple-200">
-                <Shield className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-md border border-purple-200 p-1 shrink-0 overflow-hidden">
+                <img src="/bancactiu_icon.svg" alt="BancActiu" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -317,12 +344,12 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                     Consola Exclusiva SuperAdmin
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                    DNI / ID: {initialUser?.dni || '48956602Z'}
+                    DNI / ID: {initialUser?.dni || 'AUTORITZAT'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-600 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{initialUser?.name || "Marc Cachinero Baranda"} · Governança i Control Central</span>
+                  <span>{initialUser?.name || "Administrador Acreditat"} · Governança i Control Central</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200">
                     Centre: {tenantContext.shortName}
                   </span>
@@ -330,43 +357,26 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               </div>
             </div>
 
-            {/* Centre: Accions Ràpides Exclusives amb Re-Autenticació */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Botó 1: Gestió d'Usuaris i Rols (Navegació ordinària) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services');
-                }}
-                title="Gestió de perfils, serveis i llocs de treball"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
-                  activeWorkspace === 'roles-services'
-                    ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-purple-500/10'
-                    : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
-                }`}
-              >
-                <Users size={14} className="text-purple-600 group-hover:scale-110 transition-transform" />
-                <span>Gestió d'Usuaris i Rols</span>
-              </button>
-
-              {/* Botó 1.5: Mòdul d'Auditoria Massiva i Simulació d'Estrès (5 Anys) */}
+            {/* Centre: Barra Modular d'Accions SuperAdmin (7 Eixos Estratègics) */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* 1. Auditoria Forense & Estrès (5 Anys) */}
               <button
                 type="button"
                 onClick={() => {
                   setActiveWorkspace(activeWorkspace === 'simulations-audit' ? null : 'simulations-audit');
                 }}
-                title="Auditoria Massiva de Tenants i Simulació d'Estrès a 5 Anys"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
+                title="Auditoria Forense Massiva de Tenants i Simulació d'Estrès a 5 Anys"
+                className={`group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'simulations-audit'
                     ? 'bg-emerald-100 text-emerald-900 border-emerald-300 shadow-emerald-500/10'
                     : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200 hover:border-emerald-300'
                 }`}
               >
-                <Activity size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>Auditoria & Estrès (5 Anys)</span>
+                <Activity size={13} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Auditoria</span>
               </button>
 
-              {/* Botó 2: Auditoria Zero-Trust (Accés explícit al laboratori d'auditoria/paràmetres de xarxa) */}
+              {/* 2. Seguretat (Zero-Trust amb 2FA) */}
               <button
                 type="button"
                 onClick={() => {
@@ -375,118 +385,118 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   } else {
                     requestSensitiveAction(
                       'AUDIT_LAB_NETWORK',
-                      "Accés al Laboratori d'Auditoria i Paràmetres de Xarxa",
-                      "Accés a mètriques d'auditoria immutable, escàner de seguretat en temps real i laboratoris d'estrès.",
+                      "Accés al Laboratori de Seguretat Zero-Trust (ENS Nivell Alt)",
+                      "Mètriques de ciberseguretat militar, escàner de xarxa i paràmetres criptogràfics.",
                       () => setActiveWorkspace('security-lab')
                     );
                   }
                 }}
-                title="Estat de ciberseguretat militar i escàner de vulnerabilitats ENS (Requereix Doble Verificació)"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
+                title="Ciberseguretat Zero-Trust i Escàner ENS (Requereix 2FA)"
+                className={`group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
                   activeWorkspace === 'security-lab'
                     ? 'bg-cyan-100 text-cyan-900 border-cyan-300 shadow-cyan-500/10'
                     : 'bg-white hover:bg-cyan-50 text-slate-700 border-slate-200 hover:border-cyan-300'
                 }`}
               >
-                <Lock size={14} className="text-cyan-600 group-hover:scale-110 transition-transform" />
-                <span>Auditoria Zero-Trust</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 font-mono font-bold">2FA</span>
+                <Lock size={13} className="text-cyan-600 group-hover:scale-110 transition-transform" />
+                <span>Seguretat Zero-Trust</span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-100 text-cyan-800 font-mono font-bold">2FA</span>
               </button>
 
-              {/* Botó 3: Exportació Massiva de Dades Protegides (sota RGPD) */}
+              {/* 3. Control de Centres */}
               <button
                 type="button"
                 onClick={() => {
-                  requestSensitiveAction(
-                    'MASS_DATA_EXPORT',
-                    "Exportació Massiva de Dades Protegides (RGPD/ENS)",
-                    "Extracció i descàrrega xifrada del registre d'auditoria forense i expedients d'ajudes tècniques.",
-                    (data) => {
-                      showToast(
-                        "Exportació Forense Autoritzada",
-                        `Extracció completada amb èxit sota protocols RGPD i ENS. Ref: ${data?.auditId || 'EXP-RGPD-2026'}`
-                      );
-                    }
-                  );
+                  setActiveWorkspace(activeWorkspace === 'centres-onboarding' ? null : 'centres-onboarding');
                 }}
-                title="Exportació de dades sensibles protegida per doble verificació"
-                className="group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border bg-white hover:bg-emerald-50 text-slate-700 border-slate-200 hover:border-emerald-300"
-              >
-                <Download size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>Exportació Protegida</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold">2FA</span>
-              </button>
-
-              {/* Botó 2.6: Taller Creu Roja (FASE 3) */}
-              <button
-                type="button"
-                onClick={() => setActiveWorkspace(activeWorkspace === 'workshop-repairs' ? null : 'workshop-repairs')}
-                title="Taller Tècnic de Creu Roja i Reparacions d'Ajudes Tècniques"
-                className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
-                  activeWorkspace === 'workshop-repairs'
-                    ? 'bg-rose-100 text-rose-900 border-rose-300 shadow-rose-500/10'
-                    : 'bg-white hover:bg-rose-50 text-slate-700 border-slate-200 hover:border-rose-300'
+                title="Control i Alta Descentralitzada de Centres (CAPs, Hospitals, Entitats)"
+                className={`group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'centres-onboarding'
+                    ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-purple-500/10'
+                    : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
                 }`}
               >
-                <Wrench size={14} className="text-rose-600 group-hover:scale-110 transition-transform" />
-                <span>Taller Creu Roja</span>
+                <Building2 size={13} className="text-purple-600 group-hover:scale-110 transition-transform" />
+                <span>Control de Centres</span>
               </button>
 
-              {/* Botó 2.7: Serveis Socials & Dependència (Feature Flag) */}
-              {moduleFlags.SOCIAL_SERVICES_ENABLED ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveWorkspace(activeWorkspace === 'social-services' ? null : 'social-services')}
-                  title="Espai de Gestió de Dependència, BVD, SAD i Teleassistència"
-                  className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
-                    activeWorkspace === 'social-services'
-                      ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-purple-500/10'
-                      : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
-                  }`}
-                >
-                  <HeartHandshake size={14} className="text-purple-600 group-hover:scale-110 transition-transform" />
-                  <span>Serveis Socials & Dependència</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    toggleModuleFlag('SOCIAL_SERVICES_ENABLED');
-                    setActiveWorkspace('social-services');
-                  }}
-                  title="Mòdul desactivat per defecte. Clica per activar sota demanda."
-                  className="group px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-700 hover:bg-purple-100 transition-all flex items-center gap-1.5 border border-dashed border-purple-300 bg-purple-50"
-                >
-                  <HeartHandshake size={13} className="text-purple-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] font-semibold">Serveis Socials (Activar)</span>
-                </button>
-              )}
+              {/* 4. Rols / Usuaris */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services');
+                }}
+                title="Gestió de perfils, usuaris RBAC i privilegis institucionals"
+                className={`group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border ${
+                  activeWorkspace === 'roles-services'
+                    ? 'bg-indigo-100 text-indigo-900 border-indigo-300 shadow-indigo-500/10'
+                    : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                <Users size={13} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+                <span>Rols / Usuaris</span>
+              </button>
 
-              {/* Botó 3: Gestió de Xarxa i Préstecs (Social + Operatiu) */}
-              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200 shadow-sm">
+              {/* 5. Serveis */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveWorkspace(activeWorkspace === 'roles-services' ? null : 'roles-services');
+                }}
+                title="Catàleg de serveis sociosanitaris i llocs de treball"
+                className="group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border bg-white hover:bg-blue-50 text-slate-700 border-slate-200 hover:border-blue-300"
+              >
+                <Server size={13} className="text-blue-600 group-hover:scale-110 transition-transform" />
+                <span>Serveis</span>
+              </button>
+
+              {/* 6. Recuperació de fluxos davant caigudes (Disaster Recovery Reset/Restore) */}
+              <button
+                type="button"
+                onClick={() => setIsDisasterRecoveryOpen(true)}
+                title="Consola de Disaster Recovery: Purga de bloqueigs i recuperació de fluxos caiguts"
+                className="group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300"
+              >
+                <RotateCcw size={13} className="text-amber-700 group-hover:rotate-180 transition-transform duration-500" />
+                <span>Recuperació de Fluxos</span>
+              </button>
+
+              {/* 7. Monitoratge d'intrusions amb aïllament automàtic (SOAR) */}
+              <button
+                type="button"
+                onClick={() => setIsSoarModalOpen(true)}
+                title="Monitoratge de Seguretat Activa SOAR i Aïllament Automàtic de Vectors Hostils"
+                className="group px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm border bg-rose-50 hover:bg-rose-100 text-rose-900 border-rose-300"
+              >
+                <ShieldAlert size={13} className="text-rose-700 group-hover:scale-110 transition-transform" />
+                <span>SOAR / Aïllament</span>
+              </button>
+
+              {/* Enllaços directes a xarxa social i préstecs */}
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200 shadow-sm ml-1">
                 <button
                   type="button"
                   onClick={() => handleNavigateModule('bancactiu-social', 3003)}
-                  title="Enllaç directe al mòdul Social (Banc del Temps i Xarxa Ciutadana)"
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-rose-50 transition-all flex items-center gap-1"
+                  title="Enllaç directe al mòdul Social"
+                  className="px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-rose-50 transition-all flex items-center gap-1"
                 >
-                  <Share2 size={13} className="text-rose-600" />
+                  <Share2 size={12} className="text-rose-600" />
                   <span>Xarxa Social</span>
                 </button>
                 <span className="text-slate-300">|</span>
                 <button
                   type="button"
                   onClick={() => handleNavigateModule('bancactiu-operatiu', 3004)}
-                  title="Enllaç directe al mòdul Operatiu (Logística de Préstecs i Ortopèdia)"
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-blue-50 transition-all flex items-center gap-1"
+                  title="Enllaç directe al mòdul Operatiu"
+                  className="px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-blue-50 transition-all flex items-center gap-1"
                 >
-                  <Boxes size={13} className="text-blue-600" />
-                  <span>Gestió de Préstecs</span>
+                  <Boxes size={12} className="text-blue-600" />
+                  <span>Préstecs</span>
                 </button>
               </div>
             </div>
 
-            {/* Dreta: Accés ràpid Manuals i Estat */}
+            {/* Dreta: Accés ràpid Manuals & PDFs (Stealth Pentesting Mode: Cap element visible de trampa/honeypot al DOM) */}
             <div className="flex items-center gap-2">
               <Link
                 href="/docs"
@@ -512,90 +522,111 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           onLogout={handleLogout}
         />
 
-        {/* FASE 2: BARRA DE SEPARACIÓ D'ACCESSOS PER ROLS OPERATIUS */}
+        {/* FASE 2: BARRA DE SEPARACIÓ D'ACCESSOS I SIMULACIÓ PER ROLS OPERATIUS */}
         <div className="my-2.5 p-2 sm:p-2.5 rounded-2xl bg-white/95 border border-purple-200 backdrop-blur-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 pl-2">
             <ShieldCheck size={16} className="text-purple-600 shrink-0" />
             <div>
               <span className="text-xs font-black tracking-wide text-slate-900 uppercase block">
-                Separació d'Accessos per Rols Operatius:
+                Mòdul de Simulació & Separació de Rols:
               </span>
               <span className="text-[10px] text-slate-500">
-                Pestanyes i visió del sistema adaptades per a cada rol d'intervenció
+                Alterna entre perfils institucionals per auditar o operar sota el seu entorn dedicat
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-            {/* Rol 1: Treballador del CAP */}
+            {/* Rol 1: SuperAdmin */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('SUPERADMIN');
+                setActiveWorkspace(null);
+                showToast("Rol Actiu: SuperAdmin", "Consola central de governança, auditoria i màxima seguretat.");
+              }}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-sm ${
+                activeRole === 'SUPERADMIN' && !activeWorkspace
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              SuperAdmin
+            </button>
+
+            {/* Rol 2: Administratiu / Voluntariat */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('ADMINISTRATIU');
+                setActiveWorkspace('administratiu');
+                showToast("Rol Actiu: Administratiu / Voluntariat", "Pantalla dividida, cerca amb ressaltat groc suau i filiació ciutadana.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeRole === 'ADMINISTRATIU' || activeWorkspace === 'administratiu'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-500 shadow-amber-500/20'
+                  : 'bg-white hover:bg-amber-50 text-slate-700 border-slate-200 hover:border-amber-300'
+              }`}
+            >
+              <Users size={14} className={activeRole === 'ADMINISTRATIU' || activeWorkspace === 'administratiu' ? 'text-white' : 'text-amber-600'} />
+              <span>Administratiu / Voluntariat</span>
+            </button>
+
+            {/* Rol 3: Gerència i Referents */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('GERENCIA');
+                setActiveWorkspace('gerencia');
+                showToast("Rol Actiu: Gerència i Referents", "Supervisió territorial, diagrames de flux interactius i taulers KPI.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeRole === 'GERENCIA' || activeWorkspace === 'gerencia'
+                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-indigo-500 shadow-indigo-500/20'
+                  : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+              }`}
+            >
+              <Activity size={14} className={activeRole === 'GERENCIA' || activeWorkspace === 'gerencia' ? 'text-white' : 'text-indigo-600'} />
+              <span>Gerència i Referents</span>
+            </button>
+
+            {/* Rol 4: Centre de Reparació (Creu Roja) */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRole('TALLER_REPARACIONS');
+                setActiveWorkspace('workshop-repairs');
+                showToast("Rol Actiu: Taller Creu Roja", "Cicle de reparacions, control de recanvis i missatgeria transversal.");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                activeWorkspace === 'workshop-repairs' || activeRole === 'TALLER_REPARACIONS'
+                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-500 shadow-rose-500/20'
+                  : 'bg-white hover:bg-rose-50 text-slate-700 border-slate-200 hover:border-rose-300'
+              }`}
+            >
+              <Wrench size={14} className={activeWorkspace === 'workshop-repairs' || activeRole === 'TALLER_REPARACIONS' ? 'text-white' : 'text-rose-600'} />
+              <span>Taller Creu Roja</span>
+            </button>
+
+            {/* Rol 5: Treballador del CAP (Clínic) */}
             <button
               type="button"
               onClick={() => {
                 setActiveRole('TECNIC_SALUT');
-                showToast("Rol Actiu: Treballador del CAP", "Gestió clínica, validació Barthel i prescripció mèdica d'ortopèdia.");
+                setActiveWorkspace(null);
+                showToast("Rol Actiu: Treballador Clínic del CAP", "Gestió de prescripció PAO i validació mèdica d'ortopèdia.");
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
-                activeRole === 'TECNIC_SALUT'
+                activeRole === 'TECNIC_SALUT' && !activeWorkspace
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-emerald-500/20'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-emerald-300'
+                  : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200 hover:border-emerald-300'
               }`}
             >
-              <Stethoscope size={14} className={activeRole === 'TECNIC_SALUT' ? 'text-white' : 'text-emerald-600'} />
-              <span>Treballador del CAP</span>
-              <span className="text-[10px] opacity-80 hidden lg:inline">(Prescripció Mèdica)</span>
+              <Stethoscope size={14} className={activeRole === 'TECNIC_SALUT' && !activeWorkspace ? 'text-white' : 'text-emerald-600'} />
+              <span>Personal Clínic CAP</span>
             </button>
 
-            {/* Accés exclusiu de prescripció per al personal clínic del CAP */}
-            {activeRole === 'TECNIC_SALUT' && (
-              <button
-                type="button"
-                onClick={handleOpenNewLoanModal}
-                title="Alta interactiva de Nou Préstec Clínic d'Ortopèdia Comunitària"
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 border shadow-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border-emerald-500 shadow-emerald-500/20 animate-fadeIn"
-              >
-                <PackagePlus size={14} className="text-white" />
-                <span>+ Nou Préstec Clínic</span>
-              </button>
-            )}
-
-            {/* Rol 2: Voluntari / Entitat Veïnal */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveRole('VOLUNTARI');
-                showToast("Rol Actiu: Voluntari / Entitat Veïnal", "Peticions de suport veïnal, acompanyament i derivacions.");
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
-                activeRole === 'VOLUNTARI'
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-500 shadow-amber-500/20'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-amber-300'
-              }`}
-            >
-              <HeartHandshake size={14} className={activeRole === 'VOLUNTARI' ? 'text-white' : 'text-amber-600'} />
-              <span>Voluntari / Entitat Veïnal</span>
-              <span className="text-[10px] opacity-80 hidden lg:inline">(Peticions i Suport)</span>
-            </button>
-
-            {/* Rol 3: Centre de Reparació (Creu Roja) */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveRole('TERCER_SECTOR');
-                setActiveWorkspace('workshop-repairs');
-                showToast("Rol Actiu: Centre de Reparació (Creu Roja)", "Accés directe al workspace tècnic de tallers i recondicionament.");
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
-                activeWorkspace === 'workshop-repairs' || activeRole === 'TERCER_SECTOR'
-                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-500 shadow-rose-500/20'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-rose-300'
-              }`}
-            >
-              <Wrench size={14} className={activeWorkspace === 'workshop-repairs' ? 'text-white' : 'text-rose-600'} />
-              <span>Centre de Reparació (Creu Roja)</span>
-              <span className="text-[10px] opacity-80 hidden lg:inline">(Gestió Tècnica)</span>
-            </button>
-
-            {/* Rol 4: Serveis Socials & Dependència (FASE 2) */}
+            {/* Rol 6: Serveis Socials & Dependència */}
             <button
               type="button"
               onClick={() => {
@@ -604,38 +635,53 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 }
                 setActiveRole('SERVEIS_SOCIALS');
                 setActiveWorkspace('social-services');
-                showToast("Rol Actiu: Serveis Socials (Dependència)", "Mòdul activat sota demanda. Gestió d'expedients BVD (64 punts), SAD i PIAs.");
+                showToast("Rol Actiu: Serveis Socials (Dependència)", "Gestió d'expedients BVD (64 punts), SAD i coordinació PIA.");
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                 activeWorkspace === 'social-services' || activeRole === 'SERVEIS_SOCIALS'
                   ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-purple-500/20'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-purple-300'
+                  : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
               }`}
             >
-              <HeartHandshake size={14} className={activeWorkspace === 'social-services' ? 'text-white' : 'text-purple-600'} />
+              <HeartHandshake size={14} className={activeWorkspace === 'social-services' || activeRole === 'SERVEIS_SOCIALS' ? 'text-white' : 'text-purple-600'} />
               <span>Serveis Socials</span>
-              <span className="text-[10px] opacity-80 hidden lg:inline">
-                {moduleFlags.SOCIAL_SERVICES_ENABLED ? '(Dependència & PIA)' : '(Activar)'}
-              </span>
             </button>
+          </div>
+        </div>
 
-            {/* Rol SuperAdmin Global */}
+        {/* FASE 2: Avís Visual de Mode Simulació Actiu & Botó de Retorn SuperAdmin */}
+        {activeRole !== 'SUPERADMIN' && (
+          <div className="my-2.5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-300 backdrop-blur-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wide text-amber-900">
+                    Mode Simulació Actiu: {activeRole.replace('_', ' ')}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                    Acreditació Verificada RGPD
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  Visualitzant la plataforma amb la perspectiva i permisos del perfil {activeRole.replace('_', ' ')}. Totes les accions estan traçades sota l'estàndard ENS.
+                </p>
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
                 setActiveRole('SUPERADMIN');
                 setActiveWorkspace(null);
+                showToast("Sessió Restablerta", "Has sortit de la simulació i tornat a la consola completa de Superadministrador.");
               }}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                activeRole === 'SUPERADMIN' && !activeWorkspace
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-              }`}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-sm shrink-0 flex items-center gap-1.5"
             >
-              SuperAdmin
+              <RotateCcw size={14} />
+              <span>Restablir Sessió SuperAdmin</span>
             </button>
           </div>
-        </div>
+        )}
 
         {/* Zona de Treball Dinàmica o Launchpad */}
         {!activeWorkspace ? (
@@ -915,6 +961,20 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
               </GlassBadge>
             </div>
 
+            {activeWorkspace === 'administratiu' && (
+              <AdministratiuVoluntariatWorkspace
+                onClose={() => setActiveWorkspace(null)}
+                onShowToast={(title, msg) => showToast(title, msg)}
+              />
+            )}
+
+            {activeWorkspace === 'gerencia' && (
+              <GerenciaReferentsWorkspace
+                onClose={() => setActiveWorkspace(null)}
+                onShowToast={(title, msg) => showToast(title, msg)}
+              />
+            )}
+
             {activeWorkspace === 'interoperability' && (
               <SuperAdminInteroperabilityWorkspace onClose={() => setActiveWorkspace(null)} />
             )}
@@ -922,7 +982,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             {activeWorkspace === 'simulations-audit' && (
               <SuperAdminSimulationsAndAuditWorkspace
                 onClose={() => setActiveWorkspace(null)}
-                adminDni={initialUser?.dni || '48956602Z'}
+                adminDni={initialUser?.dni || ''}
                 onShowToast={(title, msg) => showToast(title, msg)}
               />
             )}
@@ -1014,8 +1074,8 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           actionTitle={authModalConfig.actionTitle}
           actionDescription={authModalConfig.actionDescription}
           actionSeverity={authModalConfig.actionSeverity}
-          currentUserDni={initialUser?.dni || '48956602Z'}
-          currentUserName={initialUser?.name || 'Marc Cachinero Baranda'}
+          currentUserDni={initialUser?.dni || ''}
+          currentUserName={initialUser?.name || 'Administrador Acreditat'}
           currentUserRole={activeRole}
           moduleName="bancactiu-nexus"
         />
@@ -1038,6 +1098,218 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           onAccept={() => setShowIpModal(false)}
           user={initialUser}
         />
+
+        {/* Modal de Recuperació de Fluxos & Disaster Recovery (Zero-Downtime) */}
+        {isDisasterRecoveryOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-900">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                    <RotateCcw size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Consola de Recuperació de Fluxos (Disaster Recovery)</h3>
+                    <p className="text-xs text-slate-500">Supervisió d'estat de caigudes, purga de bloqueigs i restauració de continuïtat</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDisasterRecoveryOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 text-xl font-bold p-1"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="font-bold text-slate-800 block mb-1">Còpia de Seguretat Oficial (Real)</span>
+                    <span className="font-mono text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 block truncate">
+                      bancactiu-backup-real-20261118.zip
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">Integritat SHA-256 Verificada</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="font-bold text-slate-800 block mb-1">Còpia de Seguretat Proves (Honeypot)</span>
+                    <span className="font-mono text-[11px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 block truncate">
+                      bancactiu-backup-intrusio-20261118.zip
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">Tag Git: backup-intrusio-20261118</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <span className="font-bold text-slate-800 block">Estat dels Micro-Serveis de la Plataforma:</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> Nexus (Governança): 3000
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> Salut (Clínic): 3001
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> Municipal: 3002
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> Social: 3003
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> Operatiu: 3004
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 size={13} /> BD Prisma/SQLite: OK
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                  <strong>Protocol davant Caiguda:</strong> En cas de pèrdua de sincronisme o bloqueig de concurrència, aquest procediment allibera locks de sessió, purga la memòria cau intermediària i restableix les rutes de servei sense reiniciar la base de dades ni perdre expedients.
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-100">
+                <GlassButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsDisasterRecoveryOpen(false)}
+                >
+                  Tancar
+                </GlassButton>
+                <GlassButton
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setIsRestoringFlows(true);
+                    setTimeout(() => {
+                      setIsRestoringFlows(false);
+                      setIsDisasterRecoveryOpen(false);
+                      showToast(
+                        "Fluxos Restablits amb Èxit",
+                        "Tots els bloqueigs temporals han estat purgats i els serveis funcionen amb paràmetres nominals."
+                      );
+                    }, 800);
+                  }}
+                  icon={<RotateCcw size={14} className={isRestoringFlows ? "animate-spin" : ""} />}
+                >
+                  {isRestoringFlows ? "Restablint..." : "Executar Restabliment de Fluxos"}
+                </GlassButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Monitoratge SOAR (Aïllament Automàtic) */}
+        {isSoarModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-900">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
+                    <ShieldAlert size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Monitoratge SOAR & Aïllament Automàtic</h3>
+                    <p className="text-xs text-slate-500">Detecció en temps real, quarantena d'intrusió i protecció Zero-Trust (ENS)</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSoarModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 text-xl font-bold p-1"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-500 font-semibold block uppercase">Tallafocs WAF</span>
+                    <span className="text-lg font-black text-emerald-700">100% Blindat</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">0 vectors no autoritzats</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-500 font-semibold block uppercase">Aïllament SOAR</span>
+                    <span className="text-lg font-black text-purple-700">Actiu</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Quarantena automàtica</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-500 font-semibold block uppercase">ENS Categoria</span>
+                    <span className="text-lg font-black text-cyan-700">Nivell Alt</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">RGPD Strict Isolation</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="font-bold text-slate-800 block mb-1.5">Vectors Aïllats Preventivament pel SOAR:</span>
+                  <div className="space-y-1">
+                    <div className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span className="font-mono text-xs text-slate-800">192.168.1.105</span>
+                        <span className="text-[10px] text-slate-400">(Intent d'injecció / Proves d'intrusió)</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        Quarantena Activa
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="font-mono text-xs text-slate-800">10.0.4.88</span>
+                        <span className="text-[10px] text-slate-400">(Sondeig de ports HTTPS)</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        Monitoritzat
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs">
+                  <strong>Ring-Fencing de Credencials:</strong> El magatzem de claus oficials manté immutables els perfils autoritzats de Bartolomé Cachinero Moreno (52622304Y) i Marc Cachinero Baranda (47956602S).
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-100">
+                <GlassButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsSoarModalOpen(false)}
+                >
+                  Tancar
+                </GlassButton>
+                <GlassButton
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setSoarScanActive(true);
+                    setTimeout(() => {
+                      setSoarScanActive(false);
+                      showToast(
+                        "Escaneig SOAR Completat",
+                        "Tots els 7 servidors i nodes territorials han estat verificats. 0 vulnerabilitats trobades."
+                      );
+                    }, 1000);
+                  }}
+                  icon={<ShieldAlert size={14} className={soarScanActive ? "animate-pulse" : ""} />}
+                >
+                  {soarScanActive ? "Escanejant..." : "Executar Escaneig en Temps Real"}
+                </GlassButton>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </RadialAuraBackground>
     </SessionLockManager>

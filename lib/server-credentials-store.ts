@@ -1,7 +1,7 @@
 /**
  * Magatzem de Persistència de Credencials al Servidor / Backend (Render / Node.js / Vercel Serverless)
- * Assegura que la contrasenya del Superadministrador (52622304Y), Administrador institucional
- * i resta d'usuaris persisteixi de forma immutable i xifrada (PBKDF2 SHA-512) segons RGPD / ENS Nivell Alt.
+ * Assegura que la contrasenya del Superadministrador (52622304Y) i de Proves d'Intrusió (47956602S)
+ * persisteixi de forma immutable i xifrada (PBKDF2 SHA-512) segons RGPD / ENS Nivell Alt.
  */
 
 import fs from 'fs';
@@ -38,13 +38,21 @@ export function matchesIdentifier(u: SystemUser, identifier: string): boolean {
     return true;
   }
 
-  // Concordança específica per al compte Administrador Institucional
-  if (clean === 'ADMINISTRADOR' || clean === 'ADMIN') {
+  // Concordança específica per als comptes administradors
+  if (clean === 'ADMINISTRADOR' || clean === 'ADMIN' || clean === 'BARTO' || clean === '52622304Y' || clean === 'BARTCATMO@GMAIL.COM' || clean === '615602174') {
     return (
-      uUser === 'ADMINISTRADOR' ||
-      uDni === 'ADMINISTRADOR' ||
-      uId === 'ADMINISTRADOR' ||
-      uId === 'USER-ADMIN-INSTITUCIONAL'
+      uUser === '52622304Y' ||
+      uDni === '52622304Y' ||
+      uEmail === 'BARTCATMO@GMAIL.COM' ||
+      uId === 'USER-SUPERADMIN-BARTOLOME'
+    );
+  }
+  if (clean === 'MARC' || clean === 'SUPERADMIN' || clean === '47956602S' || clean === 'MARCCACHINERO@GMAIL.COM' || clean === '640537414') {
+    return (
+      uUser === '47956602S' ||
+      uDni === '47956602S' ||
+      uEmail === 'MARCCACHINERO@GMAIL.COM' ||
+      uId === 'USER-SUPERADMIN-MARC'
     );
   }
 
@@ -66,10 +74,13 @@ export function getServerUsers(): SystemUser[] {
   try {
     // 1. Si ja tenim memòria viva a la instància/procés Node.js amb contrasenyes actualitzades
     if (globalThis.__bancactiu_server_users__ && globalThis.__bancactiu_server_users__.length > 0) {
+      globalThis.__bancactiu_server_users__ = globalThis.__bancactiu_server_users__.filter(
+        (u) => u && (u.dni === '52622304Y' || u.dni === '47956602S') && !u.nombre?.includes('Mireia')
+      );
       const hasCustomPassInMemory = globalThis.__bancactiu_server_users__.some(
         (u) => u.mustChangePassword === false && u.currentPassword && u.currentPassword !== '1234'
       );
-      if (hasCustomPassInMemory) {
+      if (hasCustomPassInMemory && globalThis.__bancactiu_server_users__.length === 2) {
         return globalThis.__bancactiu_server_users__;
       }
     }
@@ -100,7 +111,17 @@ export function getServerUsers(): SystemUser[] {
       }
     }
 
-    // 3. Si no hi ha cap fitxer de persistència, inicialitzar amb els usuaris de base
+    // 3. Purga estricta d'usuaris obsolets o no autoritzats
+    if (Array.isArray(parsed)) {
+      parsed = parsed.filter(
+        (u) =>
+          u &&
+          (u.dni === '52622304Y' || u.dni === '47956602S' || u.username === '52622304Y' || u.username === '47956602S') &&
+          !u.nombre?.includes('Mireia')
+      );
+    }
+
+    // 4. Si no hi ha cap fitxer de persistència vàlid, inicialitzar amb els dos usuaris oficials
     if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
       parsed = INITIAL_SYSTEM_USERS.map((u) => ({
         ...u,
@@ -110,8 +131,8 @@ export function getServerUsers(): SystemUser[] {
       }));
     }
 
-    // 4. Garantir que els comptes claus existeixin sempre (Administrador, 52622304Y, 48956602Z)
-    const criticalAccounts = ['ADMINISTRADOR', '52622304Y', '48956602Z'];
+    // 5. Garantir que els dos comptes claus existeixin sempre (52622304Y i 47956602S)
+    const criticalAccounts = ['52622304Y', '47956602S'];
     for (const crit of criticalAccounts) {
       const exists = parsed.some((u) => matchesIdentifier(u, crit));
       if (!exists) {

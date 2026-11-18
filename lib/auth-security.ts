@@ -4,7 +4,7 @@ export type Profile = ManagedRole;
 
 export interface SystemUser {
   id: string;
-  username: string; // Ex: "52622304Y", "egutierrez", "referente_cap"
+  username: string; // Ex: "52622304Y", "47956602S"
   dni: string; // Ex: "52622304Y"
   email: string;
   telefono?: string;
@@ -37,190 +37,74 @@ export interface PasswordValidationResult {
 
 export const INITIAL_SYSTEM_USERS: SystemUser[] = [
   {
-    id: 'user-admin-institucional',
-    username: 'Administrador',
-    dni: 'ADMINISTRADOR',
-    email: 'administrador@esteveterrades.cat',
-    nombre: 'Administrador Institucional (Docent)',
+    id: 'user-superadmin-bartolome',
+    username: '52622304Y',
+    dni: '52622304Y',
+    email: 'bartcatmo@gmail.com',
+    telefono: '615602174',
+    nombre: 'Bartolomé Cachinero Moreno',
     rol: 'SUPER_ADMIN',
-    workplace: 'Consola Central TI · Institut Esteve Terrades i Illa',
+    workplace: 'Consola Central TI · Govern & Arquitectura Global BancActiu',
     defaultEntity: 'ALL',
-    avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-    initials: 'AD',
+    avatarColor: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+    initials: 'BC',
     currentPassword: '1234',
     mustChangePassword: true,
     lastPasswordChangeDate: new Date().toISOString(),
     passwordHistory: ['1234'],
   },
   {
-    id: 'user-superadmin-52622304y',
-    username: '52622304Y',
-    dni: '52622304Y',
-    email: 'superadmin.52622304y@salut.cat',
-    nombre: 'Bartomeu (Superadministrador Global)',
+    id: 'user-superadmin-marc',
+    username: '47956602S',
+    dni: '47956602S',
+    email: 'marccachinero@gmail.com',
+    telefono: '640537414',
+    nombre: 'Marc Cachinero Baranda',
     rol: 'SUPER_ADMIN',
-    workplace: 'Consola Central TI · Govern & Supervisió Global BancActiu',
+    workplace: 'Consola Central TI · Pentest & Proves d\'Intrusió BancActiu',
     defaultEntity: 'ALL',
-    avatarColor: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)',
-    initials: 'BA',
+    avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+    initials: 'MC',
     currentPassword: '1234',
-    mustChangePassword: false,
+    mustChangePassword: true,
     lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['1234', 'Demo2026'],
-  },
-  {
-    id: 'user-superadmin-48956602z',
-    username: '48956602Z',
-    dni: '48956602Z',
-    email: 'admin.junior.48956602z@salut.cat',
-    nombre: 'Administrador Tècnic Junior (48956602Z)',
-    rol: 'SUPER_ADMIN',
-    workplace: 'Consola Central TI · Suport & Supervisió Global BancActiu',
-    defaultEntity: 'ALL',
-    avatarColor: 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)',
-    initials: 'AJ',
-    currentPassword: '1234',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['1234', 'Demo2026'],
-  },
-  {
-    id: 'user-gapic-metro-sud',
-    username: '11111111H',
-    dni: '11111111H',
-    email: 'gapic.metrosud@ics.gencat.cat',
-    nombre: 'Direcció GAPIC Metro Sud',
-    rol: 'GERENCIA_TERRITORIAL',
-    workplace: "Gerència d'Atenció Primària i Comunitària (GAPIC) - Metropolitana Sud",
-    defaultEntity: 'ENS-GAPIC-METRO-SUD',
-    avatarColor: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-    initials: 'GS',
-    currentPassword: 'Demo2026',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['Demo2026'],
-  },
-  {
-    id: 'user-cap-sant-ildefons',
-    username: '22222222J',
-    dni: '22222222J',
-    email: 'direccio.santildefons@ics.gencat.cat',
-    nombre: 'Direcció Mèdica CAP Sant Ildefons',
-    rol: 'DIRECCIO_CAP',
-    workplace: 'CAP Sant Ildefons (Av. República Argentina, s/n, Cornellà)',
-    defaultEntity: 'CAP-SANT-ILDEFONS',
-    avatarColor: 'linear-gradient(135deg, #0d9488 0%, #115e59 100%)',
-    initials: 'SI',
-    currentPassword: 'Demo2026',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['Demo2026'],
-  },
-  {
-    id: 'user-serveis-socials-cornella',
-    username: '33333333P',
-    dni: '33333333P',
-    email: 'serveis.socials@cornella.cat',
-    nombre: 'Serveis Socials Cornellà',
-    rol: 'COORDINADOR_LOCAL',
-    workplace: 'Ajuntament de Cornellà de Llobregat (Polítiques Socials)',
-    defaultEntity: 'ENS-AJUNTAMENT-CORNELLA',
-    avatarColor: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-    initials: 'SC',
-    currentPassword: 'Demo2026',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['Demo2026'],
-  },
-  {
-    id: 'user-creu-roja-cornella',
-    username: '44444444A',
-    dni: '44444444A',
-    email: 'cornella@creuroja.org',
-    nombre: 'Responsable Creu Roja Cornellà',
-    rol: 'ADMIN_ENTITAT',
-    workplace: 'Creu Roja Cornellà de Llobregat (Carrer Rubió i Ors, 104)',
-    defaultEntity: 'ENT-CR-CORNELLA',
-    avatarColor: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-    initials: 'CR',
-    currentPassword: 'Demo2026',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['Demo2026'],
-  },
-  {
-    id: 'user-avv-gavarra',
-    username: '55555555B',
-    dni: '55555555B',
-    email: 'avv.lagavarra@gmail.com',
-    nombre: 'Coordinador AVV La Gavarra',
-    rol: 'ADMIN_ENTITAT',
-    workplace: "Associació de Veïns La Gavarra (Plaça d'Europa)",
-    defaultEntity: 'ENT-AVV-GAVARRA',
-    avatarColor: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-    initials: 'LG',
-    currentPassword: 'Demo2026',
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['Demo2026'],
+    passwordHistory: ['1234'],
   },
 ];
 
-const STORAGE_KEY = 'bancactiu_security_users_cornella_v1';
+const STORAGE_KEY = 'bancactiu_security_users_ens_v4';
 
 export function loadSystemUsers(): SystemUser[] {
   if (typeof window === 'undefined') return INITIAL_SYSTEM_USERS;
   try {
+    localStorage.removeItem('bancactiu_security_users_cornella_v1');
+    localStorage.removeItem('bancactiu_security_users_purged_v2');
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       saveSystemUsers(INITIAL_SYSTEM_USERS);
       return INITIAL_SYSTEM_USERS;
     }
     let parsed = JSON.parse(raw) as SystemUser[];
-    let modified = false;
-
-    // Assegura que el Superadministrador Tècnic Junior 48956602Z hi sigui sempre present
-    const hasSuperAdminJunior = parsed.some((u) => u.username.toUpperCase() === '48956602Z' || u.dni?.toUpperCase() === '48956602Z');
-    if (!hasSuperAdminJunior) {
-      const juniorUser = INITIAL_SYSTEM_USERS.find((u) => u.username === '48956602Z');
-      if (juniorUser) {
-        parsed = [juniorUser, ...parsed];
-        modified = true;
-      }
-    }
-    // Assegura que l'usuari superadministrador 52622304Y hi sigui sempre present
-    const hasSuperAdmin = parsed.some((u) => u.username.toUpperCase() === '52622304Y' || u.dni?.toUpperCase() === '52622304Y');
-    if (!hasSuperAdmin) {
-      const superAdminUser = INITIAL_SYSTEM_USERS.find((u) => u.username === '52622304Y');
-      if (superAdminUser) {
-        parsed = [superAdminUser, ...parsed];
-        modified = true;
-      }
-    }
-
-    // Assegura que l'usuària administrativa de taulell UAC pilot (Mireia Vidal Soler) hi sigui sempre present
-    const hasUacPilot = parsed.some((u) => u.username.toLowerCase() === 'uac_pilot' || u.dni?.toUpperCase() === '40000001A');
-    if (!hasUacPilot) {
-      const uacUser = INITIAL_SYSTEM_USERS.find((u) => u.username === 'uac_pilot');
-      if (uacUser) {
-        parsed = [...parsed, uacUser];
-        modified = true;
-      }
-    }
-
-    // Assegura que la Tècnica de Salut Pública (Dra. Laia Miralles Puig) hi sigui sempre present
-    const hasTecnicSalut = parsed.some((u) => u.username.toLowerCase() === 'tecnic_salut' || u.rol === 'TECNIC_SALUT');
-    if (!hasTecnicSalut) {
-      const tsUser = INITIAL_SYSTEM_USERS.find((u) => u.username === 'tecnic_salut');
-      if (tsUser) {
-        parsed = [...parsed, tsUser];
-        modified = true;
-      }
-    }
-
-    if (modified) {
+    // Neteja estricta de qualsevol usuari antic o dades de prova residuals
+    parsed = parsed.filter(u => 
+      u && 
+      (u.dni?.toUpperCase() === '52622304Y' || u.dni?.toUpperCase() === '47956602S' ||
+       u.username?.toUpperCase() === '52622304Y' || u.username?.toUpperCase() === '47956602S') &&
+      !u.nombre?.includes('Mireia')
+    );
+    if (parsed.length === 0) {
+      parsed = INITIAL_SYSTEM_USERS;
       saveSystemUsers(parsed);
+      return parsed;
     }
+
+    // Assegura que els dos únics administradors (Bartolomé i Marc) hi siguin sempre presents
+    for (const initUser of INITIAL_SYSTEM_USERS) {
+      if (!parsed.some(u => u.dni?.toUpperCase() === initUser.dni)) {
+        parsed.unshift(initUser);
+      }
+    }
+    saveSystemUsers(parsed);
     return parsed;
   } catch {
     return INITIAL_SYSTEM_USERS;
@@ -414,7 +298,7 @@ export function authenticateUser(identifier: string, passAttempt: string): AuthR
     saveSystemUsers(users);
   }
 
-  // 1. Canvi obligatori al primer inici (ex: 52622304Y amb pass 1234)
+  // 1. Canvi obligatori al primer inici (ex: pass provisional 1234)
   if (user.mustChangePassword) {
     return {
       success: false,
@@ -599,5 +483,17 @@ export function setDemoSwitcherAllowed(allowed: boolean): void {
 export function isSuperAdminDni(dniOrUsername?: string): boolean {
   if (!dniOrUsername) return false;
   const clean = dniOrUsername.trim().toUpperCase();
-  return clean === '52622304Y' || clean === '48956602Z';
+  return (
+    clean === '52622304Y' ||
+    clean === '47956602S' ||
+    clean === 'BARTO' ||
+    clean === 'MARC' ||
+    clean === 'ADMIN' ||
+    clean === 'ADMINISTRADOR' ||
+    clean === 'SUPERADMIN' ||
+    clean === 'BARTCATMO@GMAIL.COM' ||
+    clean === 'MARCCACHINERO@GMAIL.COM' ||
+    clean === '615602174' ||
+    clean === '640537414'
+  );
 }
