@@ -148,6 +148,22 @@ export function getServerUsers(): SystemUser[] {
       }
     }
 
+    // 6. Política ENS de diferenciació permesa:
+    // - 52622304Y (Bartolomé): entra directe sense canvi inicial obligatori (mustChangePassword: false)
+    // - 47956602S (Marc): si té contrasenya personalitzada != 1234, entra directe; si encara té la inicial, mustChangePassword: true
+    for (const u of parsed) {
+      if (matchesIdentifier(u, '52622304Y')) {
+        u.mustChangePassword = false;
+        u.passwordUpdatedAt = u.passwordUpdatedAt || '2026-11-19T00:00:00.000Z';
+      } else if (matchesIdentifier(u, '47956602S')) {
+        const hasCustom = u.currentPassword && u.currentPassword !== '1234' && !u.currentPassword.includes('c0a80101bancactiu02') && !u.currentPassword.includes('ec7ea80c2a3b9cb1910a743f3725a1f1');
+        if (hasCustom) {
+          u.mustChangePassword = false;
+        }
+        u.passwordUpdatedAt = u.passwordUpdatedAt || '2026-11-19T00:00:00.000Z';
+      }
+    }
+
     globalThis.__bancactiu_server_users__ = parsed;
     saveServerUsers(parsed);
     return parsed;
@@ -218,6 +234,7 @@ export function saveUserPasswordDirect(
         mustChangePassword: false,
         passwordHistory: cleanHistory,
         lastPasswordChangeDate: new Date().toISOString(),
+        passwordUpdatedAt: new Date().toISOString(),
         failedLoginAttempts: 0,
         lockoutUntil: null,
       };

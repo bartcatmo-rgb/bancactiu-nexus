@@ -29,99 +29,43 @@ import { getServerUsers } from '@/lib/server-credentials-store';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CLOUD_DB_FILE = path.join(DATA_DIR, 'cloud_relational_database.json');
 
+const HASH_ROCA_PBKDF2 = '$pbkdf2$100000$fb04362767a082a2a7f9383d065d61da$0e1ec9172f7ff8adfc949c009805906f2865e0fa8ae5bc690efc11747fdb1305d75175a21492e9d2c6c0314dd1c58b7be08a424ef46ff011958d9a5306b0ae99';
+const HASH_1234_PBKDF2 = '$pbkdf2$100000$ec7ea80c2a3b9cb1910a743f3725a1f1$67511f0cd05a47a28fe76152fe09f76dbe70e32d386822e03a2a3e7668a3f61b159c244a46dba9bd7173ca8f5b3b6d1e07790f46539c05e95a9b0d5ac8af28c7';
+
 // Dades llavor inicials
 function getInitialSeedData(): CloudDatabaseData {
   const initialUsuaris: UsuariCloud[] = [
     {
       dni: '52622304Y',
-      passwordHash: '1234',
-      nom: 'Bartomeu',
-      cognoms: 'Superadministrador BancActiu',
+      passwordHash: HASH_ROCA_PBKDF2,
+      nom: 'Bartolomé',
+      cognoms: 'Cachinero Moreno',
       rol: 'SUPER_ADMIN',
       ambitTerritorial: 'Catalunya - Serveis Centrals CatSalut',
       centreId: undefined,
       permisosGranulars: ['ACCES_TOTAL', 'ADMIN_USUARIS', 'ADMIN_CENTRES', 'ADMIN_PAO', 'ADMIN_ENTITATS', 'AUDITORIA_SISTEMA'],
       actiu: true,
       mustChangePassword: false,
+      isFirstLogin: false,
+      passwordUpdatedAt: '2026-11-19T00:00:00.000Z',
+      passwordHistory: [HASH_1234_PBKDF2, HASH_ROCA_PBKDF2],
       dataCreacio: '2026-01-01T08:00:00Z',
     },
     {
-      dni: '48956602Z',
-      passwordHash: '1234',
-      nom: 'Administrador Tècnic Junior',
-      cognoms: 'BancActiu Suport',
+      dni: '47956602S',
+      passwordHash: HASH_1234_PBKDF2,
+      nom: 'Marc',
+      cognoms: 'Cachinero Baranda',
       rol: 'SUPER_ADMIN',
       ambitTerritorial: 'GLOBAL_CATALUNYA',
       centreId: undefined,
       permisosGranulars: ['ACCES_TOTAL', 'ADMIN_USUARIS', 'ADMIN_CENTRES', 'ADMIN_PAO', 'ADMIN_ENTITATS', 'AUDITORIA_SISTEMA'],
       actiu: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
+      isFirstLogin: true,
+      passwordUpdatedAt: '2026-11-19T00:00:00.000Z',
+      passwordHistory: [HASH_1234_PBKDF2],
       dataCreacio: '2026-01-01T08:00:00Z',
-    },
-    {
-      dni: '11111111H',
-      passwordHash: 'Demo2026',
-      nom: 'Direcció GAPIC Metro Sud',
-      cognoms: 'ICS',
-      rol: 'GERENCIA_TERRITORIAL',
-      ambitTerritorial: 'Barcelona Metropolitana Sud - Cornellà',
-      centreId: undefined,
-      permisosGranulars: ['ADMIN_CENTRES', 'CONSULTA_CENS', 'ADMISSIO_CAP', 'SUPERVISIO_EPIDEMIOLOGICA'],
-      actiu: true,
-      mustChangePassword: false,
-      dataCreacio: '2026-01-10T08:00:00Z',
-    },
-    {
-      dni: '22222222J',
-      passwordHash: 'Demo2026',
-      nom: 'Direcció Mèdica CAP Sant Ildefons',
-      cognoms: 'EAP Sant Ildefons',
-      rol: 'DIRECCIO_CAP',
-      ambitTerritorial: 'Cornellà de Llobregat',
-      centreId: 'CAP-SANT-ILDEFONS',
-      permisosGranulars: ['ADMIN_PAO', 'GESTIO_PERSONAL_CENTRE', 'DISPENSACIO_PAO', 'CONSULTA_CENS', 'PRESTEC_AGIL'],
-      actiu: true,
-      mustChangePassword: false,
-      dataCreacio: '2026-01-10T08:00:00Z',
-    },
-    {
-      dni: '33333333P',
-      passwordHash: 'Demo2026',
-      nom: 'Serveis Socials Cornellà',
-      cognoms: 'Ajuntament de Cornellà de Llobregat',
-      rol: 'COORDINADOR_LOCAL',
-      ambitTerritorial: 'Cornellà de Llobregat',
-      centreId: undefined,
-      permisosGranulars: ['COORDINACIO_COMUNITARIA', 'CONSULTA_CENS', 'ACCES_ENTITATS_LOCALS'],
-      actiu: true,
-      mustChangePassword: false,
-      dataCreacio: '2026-01-15T09:00:00Z',
-    },
-    {
-      dni: '44444444A',
-      passwordHash: 'Demo2026',
-      nom: 'Responsable Creu Roja Cornellà',
-      cognoms: 'Assemblea Local Cornellà',
-      rol: 'ADMIN_ENTITAT',
-      ambitTerritorial: 'Cornellà de Llobregat',
-      centreId: 'ENT-CR-CORNELLA',
-      permisosGranulars: ['GESTIO_BANC_SOLIDARI', 'ENTREGA_DISPOSITIUS', 'RECEPCIO_DEVOLUCIONS'],
-      actiu: true,
-      mustChangePassword: false,
-      dataCreacio: '2026-01-15T09:00:00Z',
-    },
-    {
-      dni: '55555555B',
-      passwordHash: 'Demo2026',
-      nom: 'Coordinador AVV La Gavarra',
-      cognoms: 'Junta Veïnal Cornellà',
-      rol: 'ADMIN_ENTITAT',
-      ambitTerritorial: 'Cornellà de Llobregat',
-      centreId: 'ENT-AVV-GAVARRA',
-      permisosGranulars: ['GESTIO_BANC_SOLIDARI', 'ENTREGA_DISPOSITIUS', 'RECEPCIO_DEVOLUCIONS'],
-      actiu: true,
-      mustChangePassword: false,
-      dataCreacio: '2026-01-15T09:00:00Z',
     },
   ];
 
@@ -309,30 +253,21 @@ export function getCloudDatabase(): CloudDatabaseData {
     const content = fs.readFileSync(CLOUD_DB_FILE, 'utf-8');
     const data = JSON.parse(content) as CloudDatabaseData;
 
-    // Assegurem que l'usuari superadministrador 52622304Y existeixi sempre
-    const hasSuperAdmin = data.usuaris.some(
-      (u) => u.dni.toUpperCase() === '52622304Y'
+    // Purga estricta d'usuaris residuals (mantenir exclusivament 52622304Y i 47956602S)
+    data.usuaris = (data.usuaris || []).filter(
+      (u) =>
+        u &&
+        (u.dni?.toUpperCase() === '52622304Y' || u.dni?.toUpperCase() === '47956602S') &&
+        !u.nom?.includes('Mireia')
     );
 
-    if (!hasSuperAdmin) {
-      const superAdminInitial = getInitialSeedData().usuaris[0];
-      data.usuaris.unshift(superAdminInitial);
-      saveCloudDatabase(data);
-    }
-
-    const hasJuniorAdmin = data.usuaris.some(
-      (u) => u.dni.toUpperCase() === '48956602Z'
-    );
-
-    if (!hasJuniorAdmin) {
-      const juniorInitial = getInitialSeedData().usuaris.find(
-        (u) => u.dni.toUpperCase() === '48956602Z'
-      );
-      if (juniorInitial) {
-        data.usuaris.push(juniorInitial);
-        saveCloudDatabase(data);
+    // Assegurem que els dos administradors existeixin sempre
+    for (const initU of getInitialSeedData().usuaris) {
+      if (!data.usuaris.some((u) => u.dni.toUpperCase() === initU.dni.toUpperCase())) {
+        data.usuaris.unshift(initU);
       }
     }
+    saveCloudDatabase(data);
 
     if (!data.convenis || !Array.isArray(data.convenis) || data.convenis.length === 0) {
       data.convenis = getInitialSeedData().convenis || [];
@@ -405,7 +340,7 @@ export const dbCloud = {
     delete(dni: string): boolean {
       const data = getCloudDatabase();
       const clean = dni.trim().toUpperCase();
-      if (clean === '52622304Y' || clean === '48956602Z') {
+      if (clean === '52622304Y' || clean === '47956602S') {
         // Els Superadministradors no es poden esborrar mai
         return false;
       }

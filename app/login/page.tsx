@@ -72,11 +72,9 @@ function LoginForm() {
         localStorage.removeItem('bancactiu_auth_state');
         localStorage.removeItem('bancactiu_security_users_cornella_v1');
         localStorage.removeItem('bancactiu_usuaris_cornella_v1');
-        localStorage.removeItem('bancactiu_auth_vault');
 
         // Invalidar de forma imperativa la cookie de sessió residual
         document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
-        document.cookie = 'bancactiu_auth_vault=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
       }
 
       // Notificar al backend la neteja de la cookie bancactiu_session
@@ -117,8 +115,9 @@ function LoginForm() {
     };
   }, []);
 
-  // Estat per a la configuració inicial de contrasenya (First-Time Setup)
+  // Estat per a la configuració inicial de contrasenya (First-Time Setup) o Renovació 90 dies (ENS)
   const [isFirstTimeSetup, setIsFirstTimeSetup] = useState(false);
+  const [isExpired90Days, setIsExpired90Days] = useState(false);
   const [targetDni, setTargetDni] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -128,8 +127,8 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Validació de complexitat de contrasenya (ENS Nivell Alt)
-  const hasMinLength = newPassword.length >= 8;
+  // Validació de complexitat de contrasenya (ENS Nivell Alt: mínim 10 caràcters)
+  const hasMinLength = newPassword.length >= 10;
   const hasUpper = /[A-Z]/.test(newPassword);
   const hasLower = /[a-z]/.test(newPassword);
   const hasNumber = /[0-9]/.test(newPassword);
@@ -169,11 +168,16 @@ function LoginForm() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Comprovar si el Superadmin requereix configurar la contrasenya inicial (First-Time Setup)
+        // Comprovar si es requereix configurar la contrasenya inicial o renovació trimestral (ENS 90 dies)
         if (data.requirePasswordSetup) {
           setTargetDni(data.dni || identifier.trim().toUpperCase() || '');
           setIsFirstTimeSetup(true);
-          setSuccessMsg(data.message || 'Primer accés detectat. Definiu la vostra contrasenya segura.');
+          setIsExpired90Days(Boolean(data.isExpired90Days));
+          if (data.isExpired90Days) {
+            setErrorMsg(data.message || "La teva contrasenya ha superat el període màxim de 90 dies (ENS). Has d'establir-ne una de nova per continuar");
+          } else {
+            setSuccessMsg(data.message || 'Primer accés detectat. Definiu la vostra contrasenya segura.');
+          }
           return;
         }
 
@@ -255,10 +259,16 @@ function LoginForm() {
             )}
           </div>
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-            {isFirstTimeSetup ? 'Configuració Inicial de Clau' : 'Gateway Launcher Nexus'}
+            {isExpired90Days
+              ? 'Renovació de Seguretat ENS (90 dies)'
+              : isFirstTimeSetup
+              ? 'Configuració Inicial de Clau'
+              : 'Gateway Launcher Nexus'}
           </h2>
           <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
-            {isFirstTimeSetup
+            {isExpired90Days
+              ? "La teva contrasenya ha superat el període màxim de 90 dies (ENS). Has d'establir-ne una de nova per continuar"
+              : isFirstTimeSetup
               ? 'Definiu la contrasenya personal per al compte d\'administració'
               : 'Accés autenticat per a personal acreditat i governança perimetral'}
           </p>
@@ -347,7 +357,7 @@ function LoginForm() {
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
               <div className="flex items-center gap-1.5 text-slate-500">
                 {hasMinLength ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}
-                <span className={hasMinLength ? 'text-emerald-700 font-semibold' : ''}>Mínim 8 caràcters</span>
+                <span className={hasMinLength ? 'text-emerald-700 font-semibold' : ''}>Mínim 10 caràcters (ENS Nivell Alt)</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-500">
                 {hasUpper && hasLower ? <Check size={13} className="text-emerald-600" /> : <X size={13} className="text-slate-400" />}

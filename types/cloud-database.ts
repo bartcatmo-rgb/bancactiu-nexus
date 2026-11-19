@@ -14,6 +14,9 @@ export interface UsuariCloud {
   permisosGranulars: string[]; // Llista de permisos
   actiu: boolean;
   mustChangePassword?: boolean;
+  isFirstLogin?: boolean;
+  passwordUpdatedAt?: string;
+  passwordHistory?: string[];
   dataCreacio: string;
   dataActualitzacio?: string;
 }

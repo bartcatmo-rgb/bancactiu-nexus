@@ -2,6 +2,9 @@ import type { ManagedRole } from '@/types/demo-user';
 import { verifyPassword } from '@/lib/crypto-security';
 export type Profile = ManagedRole;
 
+export const HASH_ROCA_PBKDF2 = '$pbkdf2$100000$fb04362767a082a2a7f9383d065d61da$0e1ec9172f7ff8adfc949c009805906f2865e0fa8ae5bc690efc11747fdb1305d75175a21492e9d2c6c0314dd1c58b7be08a424ef46ff011958d9a5306b0ae99';
+export const HASH_1234_PBKDF2 = '$pbkdf2$100000$ec7ea80c2a3b9cb1910a743f3725a1f1$67511f0cd05a47a28fe76152fe09f76dbe70e32d386822e03a2a3e7668a3f61b159c244a46dba9bd7173ca8f5b3b6d1e07790f46539c05e95a9b0d5ac8af28c7';
+
 export interface SystemUser {
   id: string;
   username: string; // Ex: "52622304Y", "47956602S"
@@ -17,6 +20,7 @@ export interface SystemUser {
   currentPassword: string;
   mustChangePassword: boolean; // Obligatori al primer inici de sessió
   lastPasswordChangeDate: string; // Data ISO
+  passwordUpdatedAt?: string; // Data ISO d'actualització per càlcul ENS de 90 dies
   passwordHistory: string[]; // Historial de les últimes 10 contrasenyes per evitar repeticions
   resetToken?: string | null;
   resetTokenExpires?: string | null;
@@ -48,10 +52,11 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     defaultEntity: 'ALL',
     avatarColor: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
     initials: 'BC',
-    currentPassword: '1234',
-    mustChangePassword: true,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['1234'],
+    currentPassword: HASH_ROCA_PBKDF2,
+    mustChangePassword: false,
+    lastPasswordChangeDate: '2026-11-19T00:00:00.000Z',
+    passwordUpdatedAt: '2026-11-19T00:00:00.000Z',
+    passwordHistory: [HASH_1234_PBKDF2, HASH_ROCA_PBKDF2],
   },
   {
     id: 'user-superadmin-marc',
@@ -65,10 +70,11 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     defaultEntity: 'ALL',
     avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
     initials: 'MC',
-    currentPassword: '1234',
+    currentPassword: HASH_1234_PBKDF2,
     mustChangePassword: true,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: ['1234'],
+    lastPasswordChangeDate: '2026-11-19T00:00:00.000Z',
+    passwordUpdatedAt: '2026-11-19T00:00:00.000Z',
+    passwordHistory: [HASH_1234_PBKDF2],
   },
 ];
 
@@ -135,37 +141,45 @@ export function validatePasswordSecurity(
   const errors: string[] = [];
   const cleanPass = newPassword.trim();
 
-  const hasMinLength = cleanPass.length >= 8;
-  const hasLetters = /[a-zA-Z]/.test(cleanPass);
+  // ENS Nivell Alt: Mínim 10 caràcters
+  const hasMinLength = cleanPass.length >= 10;
+  const hasUpper = /[A-Z]/.test(cleanPass);
+  const hasLower = /[a-z]/.test(cleanPass);
+  const hasLetters = hasUpper && hasLower;
   const hasNumbers = /[0-9]/.test(cleanPass);
 
   // Recompte de símbols (caràcters no alfanumèrics)
   const symbols = cleanPass.match(/[^a-zA-Z0-9]/g) || [];
   const symbolCount = symbols.length;
-  const hasAtLeastTwoSymbols = symbolCount >= 2;
+  const hasAtLeastTwoSymbols = symbolCount >= 1; // Almenys 1 caràcter especial (o 2 segons política)
 
-  // Comprova les últimes 10 contrasenyes guardades a l'historial
-  const last10 = history.slice(-10);
-  const matchesPrevious = last10.some((prevHash) => {
-    if (!prevHash) return false;
-    return verifyPassword(cleanPass, prevHash);
-  });
+  // Comprova les últimes 5 contrasenyes guardades a l'historial i la clau inicial 1234
+  const last5 = (Array.isArray(history) ? history : []).slice(0, 5);
+  const matchesPrevious =
+    cleanPass === '1234' ||
+    last5.some((prevHash) => {
+      if (!prevHash) return false;
+      return verifyPassword(cleanPass, prevHash);
+    });
   const isNotInHistory = !matchesPrevious;
 
   if (!hasMinLength) {
-    errors.push('La contrasenya ha de tenir un mínim de 8 caràcters.');
+    errors.push('La contrasenya ha de tenir un mínim de 10 caràcters (ENS Nivell Alt).');
   }
-  if (!hasLetters) {
-    errors.push('Ha de contenir almenys una lletra.');
+  if (!hasUpper) {
+    errors.push('Ha de contenir almenys una lletra majúscula (A-Z).');
+  }
+  if (!hasLower) {
+    errors.push('Ha de contenir almenys una lletra minúscula (a-z).');
   }
   if (!hasNumbers) {
-    errors.push('Ha de contenir almenys un número.');
+    errors.push('Ha de contenir almenys un número (0-9).');
   }
-  if (!hasAtLeastTwoSymbols) {
-    errors.push(`Ha de contenir com a mínim 2 símbols obligatoris (ex: @, #, $, !, %, &, *). Actualment en té: ${symbolCount}.`);
+  if (symbolCount === 0) {
+    errors.push('Ha de contenir almenys un caràcter especial (!@#$%^&*).');
   }
   if (!isNotInHistory) {
-    errors.push('La nova contrasenya no pot ser igual a cap de les darreres 10 contrasenyes utilitzades.');
+    errors.push('Per seguretat (ENS Nivell Alt), no pots reutilitzar una contrasenya anterior ni la clau inicial');
   }
 
   return {
@@ -181,13 +195,14 @@ export function validatePasswordSecurity(
 }
 
 /**
- * Verifica si la contrasenya ha caducat (més de 3 mesos / 90 dies)
+ * Verifica si la contrasenya ha caducat (més de 3 mesos / 90 dies - ENS)
  */
-export function isPasswordExpired(lastChangeDateStr: string): boolean {
-  if (!lastChangeDateStr) return true;
+export function isPasswordExpired(lastChangeDateStr?: string): boolean {
+  if (!lastChangeDateStr) return false;
   const lastChange = new Date(lastChangeDateStr).getTime();
+  if (isNaN(lastChange)) return false;
   const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
-  return Date.now() - lastChange > ninetyDaysMs;
+  return Date.now() - lastChange >= ninetyDaysMs;
 }
 
 /**

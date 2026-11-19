@@ -22,11 +22,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!newPassword || newPassword.length < 8) {
+    if (!newPassword || newPassword.length < 10) {
       return NextResponse.json(
         {
           success: false,
-          error: 'La contrasenya ha de tenir com a mínim 8 caràcters.'
+          error: 'La contrasenya ha de tenir com a mínim 10 caràcters (ENS Nivell Alt).'
         },
         { status: 400 }
       );
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validació estricta de l'historial de 10 darreres contrasenyes
+    // Validació estricta de l'historial (últimes 5 contrasenyes utilitzades + clau inicial 1234 - ENS Nivell Alt)
     const history: string[] = Array.isArray(user.passwordHistory) ? [...user.passwordHistory] : [];
     if (user.passwordHash && !history.includes(user.passwordHash)) {
       history.unshift(user.passwordHash);
@@ -110,16 +110,20 @@ export async function POST(request: Request) {
       // Fallback
     }
 
-    const matchesPrevious = history.slice(0, 10).some((prevHash) => {
-      if (!prevHash) return false;
-      return verifyPassword(newPassword.trim(), prevHash);
-    });
+    // Validar contra les últimes 5 contrasenyes o 1234
+    const last5 = history.slice(0, 5);
+    const matchesPrevious =
+      newPassword.trim() === '1234' ||
+      last5.some((prevHash) => {
+        if (!prevHash) return false;
+        return verifyPassword(newPassword.trim(), prevHash);
+      });
 
     if (matchesPrevious) {
       return NextResponse.json(
         {
           success: false,
-          error: 'La nova contrasenya no pot ser igual a cap de les darreres 10 contrasenyes utilitzades.'
+          error: 'Per seguretat (ENS Nivell Alt), no pots reutilitzar una contrasenya anterior ni la clau inicial'
         },
         { status: 400 }
       );
@@ -134,6 +138,7 @@ export async function POST(request: Request) {
     user.mustChangePassword = false;
     user.isFirstLogin = false;
     user.passwordSetAt = new Date().toISOString();
+    user.passwordUpdatedAt = new Date().toISOString();
     user.passwordHistory = updatedHistory;
 
     await sharedDb.setUserPassword(normalizedDni, newHash, updatedHistory);
@@ -186,9 +191,15 @@ export async function POST(request: Request) {
         updatedAt: new Date().toISOString(),
       };
       vault[normalizedDni] = vaultEntry;
-      if (normalizedDni === 'ADMINISTRADOR' || normalizedDni === 'ADMIN') {
+      if (normalizedDni === '52622304Y' || normalizedDni.includes('ADMIN') || normalizedDni === 'BARTO') {
+        vault['52622304Y'] = vaultEntry;
         vault['ADMINISTRADOR'] = vaultEntry;
         vault['ADMIN'] = vaultEntry;
+        vault['BARTO'] = vaultEntry;
+      } else if (normalizedDni === '47956602S' || normalizedDni.includes('MARC') || normalizedDni === 'SUPERADMIN') {
+        vault['47956602S'] = vaultEntry;
+        vault['SUPERADMIN'] = vaultEntry;
+        vault['MARC'] = vaultEntry;
       }
     } catch (e) {
       console.warn('[SetupPassword] Error preparant vault:', e);
@@ -214,7 +225,23 @@ export async function POST(request: Request) {
     response.cookies.set('bancactiu_auth_vault', encodeURIComponent(JSON.stringify(vault)), {
       path: '/',
       httpOnly: false,
-      sameSite: 'lax',
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365, // 1 any de persistència
+    });
+
+    const individualEntry = vault[normalizedDni] || {
+      passwordHash: newHash,
+      mustChangePassword: false,
+      isFirstLogin: false,
+      passwordHistory: updatedHistory,
+      updatedAt: new Date().toISOString()
+    };
+
+    response.cookies.set(`bancactiu_vault_${normalizedDni}`, encodeURIComponent(JSON.stringify(individualEntry)), {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 365, // 1 any de persistència
     });

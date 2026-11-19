@@ -16,3 +16,8 @@ En cualquier operación de Git dentro de este repositorio (`apps/bancactiu-nexus
   1. `52622304Y` - Bartolomé Cachinero Moreno (SuperAdmin)
   2. `47956602S` - Marc Cachinero Baranda (SuperAdmin)
 - Prohibido reintroducir datos de prueba obsoletos o usuarios no autorizados.
+
+## 4. Blindaje de Despliegue Silencioso (PROHIBIDO VERCEL CLI)
+- Está terminantemente PROHIBIDO ejecutar `npx vercel` o `vercel` en la terminal, scripts o entornos de ejecución.
+- Todos los despliegues de producción se realizan única y exclusivamente mediante `git push origin main` a GitHub, donde Vercel ejecuta el despliegue automático conectado al repositorio.
+- Prohibida cualquier invocación interactiva o despliegue CLI local que altere o interfiera con las credenciales o enlaces de proyecto.
