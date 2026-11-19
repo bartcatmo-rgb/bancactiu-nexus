@@ -333,7 +333,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                   }`}
                 >
                   <Building2 size={16} className={activeWorkspace === 'centres-entitats' ? 'text-white' : 'text-teal-600'} />
-                  <span className="truncate flex-1 text-left">Gestió de Centres i Entitats</span>
+                  <span className="truncate flex-1 text-left">Gestió Unificada de Centres i Entitats</span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
                     activeWorkspace === 'centres-entitats' ? 'bg-teal-800 text-teal-100' : 'bg-teal-50 text-teal-800 border border-teal-200'
                   }`}>
@@ -588,7 +588,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                 <span className="text-slate-400">eCAP</span>
                 <ChevronRight size={14} className="text-slate-300" />
                 <span className="text-slate-900 font-bold capitalize">
-                  {activeWorkspace === 'centres-entitats' && 'Gestió de Centres i Entitats (SISCAT)'}
+                  {activeWorkspace === 'centres-entitats' && 'Gestió Unificada de Centres i Entitats (SISCAT)'}
                   {activeWorkspace === 'superadmin' && 'Consola Central SuperAdmin'}
                   {activeWorkspace === 'gerencia' && 'Espai Gerència i Referents Territorials'}
                   {activeWorkspace === 'administratiu' && 'Espai Administratiu i Voluntariat'}
