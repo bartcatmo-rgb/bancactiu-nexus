@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
@@ -33,8 +33,28 @@ import {
   Shield,
   Sparkles,
   Tag,
-  MousePointerClick
+  MousePointerClick,
+  Globe,
+  Loader2
 } from 'lucide-react';
+
+export interface NormalizedCentreOnline {
+  code: string;
+  name: string;
+  ambit: string;
+  sector: string;
+  gapic: string;
+  address: string;
+  postalCode: string;
+  municipality: string;
+  abs: string;
+  phone: string;
+  email: string;
+  tipologia: TipologiaEntitat;
+  matriu: AmbitMatriu;
+  coordinates?: [number, number];
+  source: 'ONLINE_CATSALUT';
+}
 
 export type TipologiaEntitat =
   | 'CAP'
@@ -521,6 +541,143 @@ export function CentresEntitatsWorkspace() {
     estat: 'Actiu',
   });
 
+  // Estat per a la cerca online en temps real (CatSalut / Dades Obertes)
+  const [onlineResults, setOnlineResults] = useState<NormalizedCentreOnline[]>([]);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineSearchError, setOnlineSearchError] = useState<string | null>(null);
+
+  // Estat per a la cerca assistida dins del modal d'Alta Nova Entitat
+  const [modalOnlineQuery, setModalOnlineQuery] = useState('');
+  const [modalOnlineResults, setModalOnlineResults] = useState<NormalizedCentreOnline[]>([]);
+  const [isSearchingModalOnline, setIsSearchingModalOnline] = useState(false);
+
+  // Debounced online search per a la barra de cerca principal (350ms)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setOnlineResults([]);
+      setIsSearchingOnline(false);
+      setOnlineSearchError(null);
+      return;
+    }
+
+    setIsSearchingOnline(true);
+    setOnlineSearchError(null);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/centres/search-online?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.data)) {
+            // Filtrar equipaments que ja estiguin desats a la col·lecció local per no duplicar
+            const existingCodes = new Set(entitats.map((e) => (e.codi || '').toUpperCase().trim()));
+            const existingNames = new Set(entitats.map((e) => stripAccents((e.nom || '').trim())));
+            const filtered = data.data.filter((item: NormalizedCentreOnline) => {
+              const itemCode = (item.code || '').toUpperCase().trim();
+              const itemName = stripAccents((item.name || '').trim());
+              return !existingCodes.has(itemCode) && !existingNames.has(itemName);
+            });
+            setOnlineResults(filtered);
+          } else {
+            setOnlineResults([]);
+          }
+        } else {
+          setOnlineSearchError("No s'ha pogut obtenir el cens online en aquest moment.");
+        }
+      } catch (err: any) {
+        console.warn('Error fetching online centres:', err);
+        setOnlineSearchError('Error de comunicació amb el cens de la Generalitat.');
+      } finally {
+        setIsSearchingOnline(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, entitats]);
+
+  // Debounced online search per al cercador assistit del modal d'Alta (350ms)
+  useEffect(() => {
+    const q = modalOnlineQuery.trim();
+    if (q.length < 2) {
+      setModalOnlineResults([]);
+      setIsSearchingModalOnline(false);
+      return;
+    }
+
+    setIsSearchingModalOnline(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/centres/search-online?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.data)) {
+            setModalOnlineResults(data.data);
+          }
+        }
+      } catch (e) {
+        console.warn('Modal online search error:', e);
+      } finally {
+        setIsSearchingModalOnline(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [modalOnlineQuery]);
+
+  // Funció per incorporar un centre detectat al cens oficial
+  const handleIncorporateOnline = (onlineItem: NormalizedCentreOnline, openModal = true) => {
+    const preassignedRoles = getDefaultRolesForTipologia(onlineItem.tipologia);
+    const newItem: EntitatItem = {
+      id: `ENT-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      codi: onlineItem.code,
+      nom: onlineItem.name,
+      tipologia: onlineItem.tipologia,
+      matriu: onlineItem.matriu,
+      gerenciaNom: onlineItem.gapic,
+      municipi: onlineItem.municipality,
+      abs: onlineItem.abs,
+      adreca: onlineItem.address,
+      telefon: onlineItem.phone,
+      email: onlineItem.email || 'contacte.salut@gencat.cat',
+      responsable: 'Referent Territorial CatSalut',
+      estat: 'Actiu',
+      dataAlta: new Date().toISOString().split('T')[0],
+      rolesAssignats: preassignedRoles,
+      serveisHabilitats: {
+        prescripcioPAO: true,
+        bancMaterial: true,
+        atencioDomiciliaria: true,
+        citesRapides: true,
+        tallerReparacions: onlineItem.tipologia === 'TALLER',
+      },
+      notes: `Incorporat del Cens Oficial CatSalut / Generalitat (${onlineItem.ambit} · ${onlineItem.sector}).`,
+    };
+
+    if (openModal) {
+      setAltaFormData(newItem);
+      setIsAltaModalOpen(true);
+    } else {
+      const updated = [newItem, ...entitats];
+      persistEntitats(updated);
+      setFocusedNodeId(newItem.id);
+      showNotification('Entitat Incorporada', `[${newItem.nom}] s'ha donat d'alta correctament al sistema.`);
+      fetch('/api/centres', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codiRecss: newItem.codi,
+          nom: newItem.nom,
+          tipus: newItem.tipologia,
+          municipi: newItem.municipi,
+          absId: newItem.abs,
+          adreca: newItem.adreca,
+          estatOperatiu: 'OPERATIU',
+        }),
+      }).catch((err) => console.warn('Sync POST error:', err));
+    }
+  };
+
   const [notification, setNotification] = useState<{ title: string; message: string } | null>(null);
 
   const showNotification = (title: string, message: string) => {
@@ -578,21 +735,54 @@ export function CentresEntitatsWorkspace() {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [validatingEntity, editingEntitat, isAltaModalOpen]);
 
-  // Cerca normalitzada i multicamp amb filtre de matriu
+  // Detecta si la cerca textual ha trobat coincidències en un àmbit diferent al seleccionat al filtre
+  const hasMatchesInOtherScopes = useMemo(() => {
+    if (!searchQuery.trim() || selectedMatriu === 'TOTS') return false;
+    const normQuery = stripAccents(searchQuery.trim());
+    const expQuery = expandAbbreviations(normQuery);
+    const queryWords = expQuery.split(/\s+/).filter((w) => w.length > 0);
+
+    return entitats.some((item) => {
+      if (item.matriu === selectedMatriu) return false;
+      const targetBlob = [
+        item.nom,
+        item.codi,
+        item.municipi,
+        item.abs,
+        item.adreca,
+        item.telefon,
+        item.email,
+        item.responsable || '',
+        item.tipologia,
+        item.matriu,
+        item.rolesAssignats.join(' '),
+        item.notes || '',
+      ]
+        .map((s) => stripAccents(expandAbbreviations(s)))
+        .join(' ');
+
+      return queryWords.every((word) => targetBlob.includes(word));
+    });
+  }, [entitats, searchQuery, selectedMatriu]);
+
+  // Cerca normalitzada i multicamp (Sense bloqueig d'àmbit matriu durant cerques textuals)
   const filteredEntitats = useMemo(() => {
-    return entitats.filter(item => {
-      if (selectedMatriu !== 'TOTS' && item.matriu !== selectedMatriu) {
-        return false;
-      }
-      if (selectedTipus !== 'TOTS' && item.tipologia !== selectedTipus) {
-        return false;
+    return entitats.filter((item) => {
+      // Quan NO hi ha cerca textual activa, s'apliquen els filtres seleccionats a la barra
+      if (!searchQuery.trim()) {
+        if (selectedMatriu !== 'TOTS' && item.matriu !== selectedMatriu) {
+          return false;
+        }
+        if (selectedTipus !== 'TOTS' && item.tipologia !== selectedTipus) {
+          return false;
+        }
+        return true;
       }
 
-      if (!searchQuery.trim()) return true;
-
+      // Quan HI HA cerca textual activa, NO es bloqueja per Àmbit Matriu per garantir trobar recursos arreu de Catalunya
       const normQuery = stripAccents(searchQuery.trim());
       const expQuery = expandAbbreviations(normQuery);
-      const queryWords = expQuery.split(/\s+/).filter(w => w.length > 0);
+      const queryWords = expQuery.split(/\s+/).filter((w) => w.length > 0);
 
       const targetBlob = [
         item.nom,
@@ -604,11 +794,14 @@ export function CentresEntitatsWorkspace() {
         item.email,
         item.responsable || '',
         item.tipologia,
+        item.matriu,
         item.rolesAssignats.join(' '),
-        item.notes || ''
-      ].map(s => stripAccents(expandAbbreviations(s))).join(' ');
+        item.notes || '',
+      ]
+        .map((s) => stripAccents(expandAbbreviations(s)))
+        .join(' ');
 
-      return queryWords.every(word => targetBlob.includes(word));
+      return queryWords.every((word) => targetBlob.includes(word));
     });
   }, [entitats, searchQuery, selectedMatriu, selectedTipus]);
 
@@ -927,6 +1120,147 @@ export function CentresEntitatsWorkspace() {
           </span>
         </div>
       </div>
+
+      {/* Avís de coincidència en altres àmbits diferents al seleccionat */}
+      {hasMatchesInOtherScopes && selectedMatriu !== 'TOTS' && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="text-amber-600 shrink-0" />
+            <span>
+              <strong>Trobat en altres àmbits:</strong> S'han trobat equipaments coincidents fora de l'àmbit filtrat ({selectedMatriu}). S'estan mostrant tots els resultats per no amagar informació rellevant.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedMatriu('TOTS')}
+            className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 font-bold text-[11px] text-amber-950 transition-colors whitespace-nowrap self-end sm:self-auto"
+          >
+            Mostrar Tots els Àmbits
+          </button>
+        </div>
+      )}
+
+      {/* Secció de Resultats trobats al Cens Oficial CatSalut / Generalitat (Online) */}
+      {searchQuery.trim().length >= 2 && (
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-50/90 via-white to-slate-50 border border-teal-200 shadow-sm space-y-3 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-teal-100">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold shadow-xs">
+                <Globe size={15} />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span>Resultats trobats al Cens Oficial CatSalut / Generalitat (Online)</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-100 text-teal-900 border border-teal-300">
+                    Dades Obertes Catalunya
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Cerca directa a equipaments sanitaris i municipals en temps real · Prem &quot;Incorporar i Donar d'Alta&quot; per desar a la base de dades local.
+                </p>
+              </div>
+            </div>
+
+            {isSearchingOnline && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-teal-800 bg-teal-100/70 px-2.5 py-1 rounded-lg border border-teal-200">
+                <Loader2 size={13} className="animate-spin text-teal-700" />
+                <span>Consultant cens oficial...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Estat de càrrega */}
+          {isSearchingOnline && onlineResults.length === 0 && (
+            <div className="py-6 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+              <Loader2 size={22} className="animate-spin text-teal-600" />
+              <span>Cercant equipaments a l'API pública de la Generalitat de Catalunya i SISCAT...</span>
+            </div>
+          )}
+
+          {/* Estat buit (cap resultat online trobat) */}
+          {!isSearchingOnline && onlineResults.length === 0 && (
+            <div className="py-3 px-4 text-center text-xs text-slate-500 bg-white/70 rounded-xl border border-slate-200/60">
+              {onlineSearchError ? (
+                <span className="text-amber-700">{onlineSearchError}</span>
+              ) : (
+                <span>No s'han trobat centres addicionals al cens oficial per a &quot;<strong>{searchQuery}</strong>&quot;.</span>
+              )}
+            </div>
+          )}
+
+          {/* Graella de resultats oficials en línia */}
+          {onlineResults.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+              {onlineResults.map((onlineItem) => (
+                <div
+                  key={`${onlineItem.code}-${onlineItem.name}`}
+                  className="p-3 rounded-xl bg-white border border-teal-200/70 hover:border-teal-400 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between space-y-2.5"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {getTipusBadge(onlineItem.tipologia)}
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                          {onlineItem.code}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                          {onlineItem.ambit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug">
+                      <HighlightText text={onlineItem.name} query={searchQuery} />
+                    </h4>
+
+                    <div className="space-y-1 text-[11px] text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={12} className="text-slate-400 shrink-0" />
+                        <span className="truncate">
+                          <HighlightText text={`${onlineItem.address}, ${onlineItem.municipality}`} query={searchQuery} />
+                        </span>
+                      </div>
+                      {onlineItem.phone && (
+                        <div className="flex items-center gap-1.5 font-mono text-[10.5px]">
+                          <Phone size={11} className="text-slate-400 shrink-0" />
+                          <span>{onlineItem.phone}</span>
+                        </div>
+                      )}
+                      <div className="text-[10px] text-slate-400">
+                        {onlineItem.gapic} · {onlineItem.abs}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-semibold text-teal-900">Font: Cens Oficial CatSalut</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleIncorporateOnline(onlineItem, false)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1"
+                        title="Incorporar directament amb rols i configuració per defecte"
+                      >
+                        <Check size={12} className="text-teal-700" />
+                        <span>Alta Ràpida</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleIncorporateOnline(onlineItem, true)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-colors flex items-center gap-1"
+                        title="Revisar dades abans de desar definitivament"
+                      >
+                        <Plus size={12} />
+                        <span>Incorporar i Donar d'Alta</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2. Cos Principal: Arbre Jeràrquic (Drill-Down) + Panell de Detalls Focals */}
       {viewMode === 'TREE' ? (
@@ -1788,6 +2122,85 @@ export function CentresEntitatsWorkspace() {
             </div>
 
             <form onSubmit={handleSaveAlta} className="space-y-3.5 text-xs">
+              {/* Cercador assistit integrat al cens oficial */}
+              <div className="p-3 rounded-xl bg-teal-50/80 border border-teal-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-teal-950 flex items-center gap-1.5">
+                    <Globe size={13} className="text-teal-700" />
+                    <span>Cerca assistida al Cens Oficial (CatSalut / Generalitat)</span>
+                  </label>
+                  {isSearchingModalOnline && (
+                    <div className="flex items-center gap-1 text-[10px] text-teal-700">
+                      <Loader2 size={11} className="animate-spin text-teal-600" />
+                      <span>Cercant...</span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={modalOnlineQuery}
+                    onChange={(e) => setModalOnlineQuery(e.target.value)}
+                    placeholder="Escriu per cercar i autocompletar: 'Poble Sec', 'Les Hortes', 'Bellvitge'..."
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white border border-teal-200 text-slate-800 placeholder-slate-400 outline-none focus:border-teal-500 text-xs shadow-2xs"
+                  />
+                  {modalOnlineQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalOnlineQuery('');
+                        setModalOnlineResults([]);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Desplegable de coincidències online trobades per autocompletar */}
+                {modalOnlineResults.length > 0 && (
+                  <div className="max-h-44 overflow-y-auto space-y-1 bg-white rounded-lg border border-teal-100 p-1.5 shadow-sm">
+                    <div className="text-[10px] font-bold text-teal-800 px-1.5 py-0.5">
+                      Fes clic sobre un centre per autocompletar la fitxa:
+                    </div>
+                    {modalOnlineResults.slice(0, 6).map((item) => (
+                      <button
+                        key={`${item.code}-${item.name}`}
+                        type="button"
+                        onClick={() => {
+                          setAltaFormData({
+                            nom: item.name,
+                            codi: item.code,
+                            tipologia: item.tipologia,
+                            matriu: item.matriu,
+                            municipi: item.municipality,
+                            abs: item.abs,
+                            adreca: item.address,
+                            telefon: item.phone,
+                            email: item.email || 'contacte.salut@gencat.cat',
+                            notes: `Incorporat del Cens Oficial CatSalut (${item.ambit} · ${item.sector}).`,
+                            estat: 'Actiu',
+                          });
+                          setModalOnlineQuery('');
+                          setModalOnlineResults([]);
+                        }}
+                        className="w-full text-left p-1.5 rounded-md hover:bg-teal-50 transition-colors flex items-center justify-between gap-2 text-[11px] group"
+                      >
+                        <div className="truncate">
+                          <span className="font-bold text-slate-900 group-hover:text-teal-900">{item.name}</span>
+                          <span className="text-slate-400 text-[10px] ml-1">({item.municipality} · {item.code})</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-teal-100 text-teal-800 shrink-0 group-hover:bg-teal-200">
+                          Autocompletar
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Tipologia *</label>
