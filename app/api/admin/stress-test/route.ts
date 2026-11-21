@@ -10,10 +10,10 @@ export const revalidate = 0;
  * Retorna els resultats complets de la prova d'estrès a escala de Catalunya (1, 2 i 3 anys)
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const guard = guardApiAccess(request);
-  if (!guard.allowed && guard.response) {
-    return guard.response;
-  }
+  const guard = guardApiAccess(request, {
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN', 'GERENCIA_TERRITORIAL'],
+  });
+  if (!guard.allowed) return guard.response!;
 
   try {
     const data = generateStressTestMetrics();
@@ -37,12 +37,10 @@ export async function GET(request: Request): Promise<NextResponse> {
  */
 export async function POST(request: Request): Promise<NextResponse> {
   const guard = guardApiAccess(request, {
-    requiredRoles: ['SUPER_ADMIN', 'GERENCIA_TERRITORIAL'],
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN', 'GERENCIA_TERRITORIAL'],
     isWriteOperation: true,
   });
-  if (!guard.allowed && guard.response) {
-    return guard.response;
-  }
+  if (!guard.allowed) return guard.response!;
 
   try {
     const body = await request.json().catch(() => ({}));

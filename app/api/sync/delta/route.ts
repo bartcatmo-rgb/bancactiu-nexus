@@ -37,7 +37,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
+  const guard = guardApiAccess(request);
+  if (!guard.allowed) return guard.response!;
+
   return NextResponse.json({
     ok: true,
     endpoint: '/api/sync/delta',

@@ -39,20 +39,20 @@ export function matchesIdentifier(u: SystemUser, identifier: string): boolean {
   }
 
   // Concordança específica per als comptes administradors
-  if (clean === 'ADMINISTRADOR' || clean === 'ADMIN' || clean === 'BARTO' || clean === '52622304Y' || clean === 'BARTCATMO@GMAIL.COM' || clean === '615602174') {
+  if (clean === 'ADMINISTRADOR' || clean === 'ADMIN' || clean === '52622304Y') {
     return (
       uUser === '52622304Y' ||
       uDni === '52622304Y' ||
-      uEmail === 'BARTCATMO@GMAIL.COM' ||
-      uId === 'USER-SUPERADMIN-BARTOLOME'
+      uId.includes('52622304Y') ||
+      uId.includes('GOVERN')
     );
   }
-  if (clean === 'MARC' || clean === 'SUPERADMIN' || clean === '47956602S' || clean === 'MARCCACHINERO@GMAIL.COM' || clean === '640537414') {
+  if (clean === 'SUPERADMIN' || clean === '47956602S') {
     return (
       uUser === '47956602S' ||
       uDni === '47956602S' ||
-      uEmail === 'MARCCACHINERO@GMAIL.COM' ||
-      uId === 'USER-SUPERADMIN-MARC'
+      uId.includes('47956602S') ||
+      uId.includes('TECNIC')
     );
   }
 
@@ -75,7 +75,7 @@ export function getServerUsers(): SystemUser[] {
     // 1. Si ja tenim memòria viva a la instància/procés Node.js amb contrasenyes actualitzades
     if (globalThis.__bancactiu_server_users__ && globalThis.__bancactiu_server_users__.length > 0) {
       globalThis.__bancactiu_server_users__ = globalThis.__bancactiu_server_users__.filter(
-        (u) => u && (u.dni === '52622304Y' || u.dni === '47956602S') && !u.nombre?.includes('Mireia')
+        (u) => u && (u.dni === '52622304Y' || u.dni === '47956602S')
       );
       const hasCustomPassInMemory = globalThis.__bancactiu_server_users__.some(
         (u) => u.mustChangePassword === false && u.currentPassword && u.currentPassword !== '1234'
@@ -100,7 +100,7 @@ export function getServerUsers(): SystemUser[] {
             );
             if (hasCustom) {
               parsed = list;
-              break; // Trobada la versió més recent amb contrasenyes personalitzades
+              break;
             } else if (!parsed) {
               parsed = list;
             }
@@ -116,8 +116,7 @@ export function getServerUsers(): SystemUser[] {
       parsed = parsed.filter(
         (u) =>
           u &&
-          (u.dni === '52622304Y' || u.dni === '47956602S' || u.username === '52622304Y' || u.username === '47956602S') &&
-          !u.nombre?.includes('Mireia')
+          (u.dni === '52622304Y' || u.dni === '47956602S' || u.username === '52622304Y' || u.username === '47956602S')
       );
     }
 
@@ -149,14 +148,14 @@ export function getServerUsers(): SystemUser[] {
     }
 
     // 6. Política ENS de diferenciació permesa:
-    // - 52622304Y (Bartolomé): entra directe sense canvi inicial obligatori (mustChangePassword: false)
-    // - 47956602S (Marc): si té contrasenya personalitzada != 1234, entra directe; si encara té la inicial, mustChangePassword: true
+    // - 52622304Y: entra directe sense canvi inicial obligatori (mustChangePassword: false)
+    // - 47956602S: si té contrasenya personalitzada != 1234, entra directe; si encara té la inicial, mustChangePassword: true
     for (const u of parsed) {
       if (matchesIdentifier(u, '52622304Y')) {
         u.mustChangePassword = false;
         u.passwordUpdatedAt = u.passwordUpdatedAt || '2026-11-19T00:00:00.000Z';
       } else if (matchesIdentifier(u, '47956602S')) {
-        const hasCustom = u.currentPassword && u.currentPassword !== '1234' && !u.currentPassword.includes('c0a80101bancactiu02') && !u.currentPassword.includes('ec7ea80c2a3b9cb1910a743f3725a1f1');
+        const hasCustom = u.currentPassword && u.currentPassword !== '1234' && !u.currentPassword.includes('ec7ea80c2a3b9cb1910a743f3725a1f1');
         if (hasCustom) {
           u.mustChangePassword = false;
         }
@@ -195,7 +194,7 @@ export function saveServerUsers(users: SystemUser[]): void {
         const filePath = path.join(dir, 'db_credentials_users.json');
         fs.writeFileSync(filePath, JSON.stringify(users, null, 2), 'utf-8');
       } catch {
-        // En entorns de només lectura (com Vercel Serverless /var/task), continua amb els directoris escrivibles
+        // En entorns de només lectura, continua amb els directoris escrivibles
       }
     }
   } catch (error) {
@@ -204,7 +203,7 @@ export function saveServerUsers(users: SystemUser[]): void {
 }
 
 /**
- * Desa directament la nova contrasenya d'un usuari regularitzat (primer inici)
+ * Desa directament la nova contrasenya d'un usuari regularitzat
  */
 export function saveUserPasswordDirect(
   identifier: string,
@@ -225,7 +224,6 @@ export function saveUserPasswordDirect(
 
     if (userIdx !== -1) {
       const rawHistory = Array.isArray(history) ? history : [];
-      // Assegurar que el nou hash sigui el primer i un màxim de 10
       const cleanHistory = [newHash, ...rawHistory.filter((h) => h !== newHash)].slice(0, 10);
 
       users[userIdx] = {
@@ -288,7 +286,7 @@ export function updateServerUserPassword(
     };
   }
 
-  // Xifratge criptogràfic PBKDF2 segons RGPD
+  // Xifratge criptogràfic PBKDF2 segons RGPD (210.000 iteracions)
   const newHashed = hashPassword(passwordNova.trim());
 
   // Afegeix la contrasenya a l'historial (fins a 10)
@@ -372,7 +370,7 @@ export function authenticateServerUser(
     };
   }
 
-  // Comprova contrasenya amb suport per hash PBKDF2
+  // Comprova contrasenya exclusivament amb hash PBKDF2 (sense bypass ni text pla)
   const isMatch = verifyPassword(cleanPass, user.currentPassword);
   if (!isMatch) {
     const attempts = (user.failedLoginAttempts || 0) + 1;
@@ -394,12 +392,6 @@ export function authenticateServerUser(
       reason: 'INVALID_PASSWORD',
       missatge: `Contrasenya incorrecta. Intents restants: ${5 - attempts}.`,
     };
-  }
-
-  // Migració transparent a PBKDF2 si encara era en text pla
-  if (!user.currentPassword.startsWith('$pbkdf2$')) {
-    user.currentPassword = hashPassword(cleanPass);
-    saveServerUsers(users);
   }
 
   // Reset intents fallits

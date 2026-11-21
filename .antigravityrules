@@ -10,7 +10,7 @@
 - Proyecto de producción: `bancactiu-nexus` / `banc-actiu-2-0-separacion-entidades`
 
 ## 3. Ring-Fencing de Credenciales y Autenticación
-- Usuarios autorizados exclusivos: `52622304Y` (Bartolomé Cachinero Moreno) y `47956602S` (Marc Cachinero Baranda).
+- Usuarios autorizados exclusivos: `52622304Y` (SuperAdmin Govern TI) y `47956602S` (SuperAdmin Pentest TI).
 - Prohibido texto plano de contraseñas.
 - 52622304Y entra directo con su clave ENS base.
 - 47956602S requiere cambio inicial persistente, sin poder volver a 1234.

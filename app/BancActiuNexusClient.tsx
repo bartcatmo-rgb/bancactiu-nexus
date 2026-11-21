@@ -290,11 +290,11 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             <div className="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs shrink-0">
-                  {initialUser?.name?.charAt(0) || 'B'}
+                  {initialUser?.name?.charAt(0) || 'S'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-slate-900 truncate">
-                    {initialUser?.name || 'Bartolomé Cachinero Moreno'}
+                    {initialUser?.name || 'SuperAdmin Govern TI'}
                   </div>
                   <div className="text-[11px] text-slate-500 font-mono truncate">
                     DNI: {initialUser?.dni || '52622304Y'}
@@ -717,7 +717,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
                           <span>Consola Central SuperAdmin · ENS Nivell Alt</span>
                         </div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                          Benvingut, {initialUser?.name || 'Bartolomé Cachinero Moreno'}
+                          Benvingut, {initialUser?.name || 'SuperAdmin Govern TI'}
                         </h1>
                         <p className="text-xs text-slate-500 mt-1">
                           DNI: {initialUser?.dni || '52622304Y'} · Control Total d'Interoperabilitat, Seguretat i Catàleg SISCAT
@@ -910,7 +910,7 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
           actionDescription={authModalConfig.actionDescription}
           actionSeverity={authModalConfig.actionSeverity}
           currentUserDni={initialUser?.dni || '52622304Y'}
-          currentUserName={initialUser?.name || 'Bartolomé Cachinero Moreno'}
+          currentUserName={initialUser?.name || 'SuperAdmin Govern TI'}
           currentUserRole={initialUser?.role || 'SUPERADMIN'}
           onClose={() => setAuthModalConfig(prev => ({ ...prev, isOpen: false }))}
           onSuccess={(authData) => {
@@ -926,9 +926,9 @@ export default function BancActiuNexusClient({ initialUser }: BancActiuNexusClie
             isOpen={showIpModal}
             user={{
               dni: initialUser?.dni || '52622304Y',
-              name: initialUser?.name || 'Bartolomé Cachinero Moreno',
+              name: initialUser?.name || 'SuperAdmin Govern TI',
               role: initialUser?.role || 'SUPERADMIN',
-              email: initialUser?.email || 'bartcatmo@gmail.com'
+              email: initialUser?.email || 'superadmin.govern@bancactiu.cat'
             }}
             onAccept={() => {
               const userKey = initialUser?.dni || initialUser?.name || 'current_user';

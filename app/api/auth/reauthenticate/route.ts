@@ -3,78 +3,72 @@ import { cookies } from 'next/headers';
 import { sharedDb } from '@bancactiu/db';
 import { verifyPassword } from '@/lib/crypto-security';
 import { getServerUsers, matchesIdentifier } from '@/lib/server-credentials-store';
+import { verifySessionToken } from '@/lib/security/session';
+import { reauthRateLimiter } from '@/lib/security/rate-limit';
+import { extractClientIp, recordIntrusionEvent } from '@/lib/intrusion-store';
 
 export async function POST(request: Request) {
+  const clientIp = extractClientIp(request);
+
+  // Rate Limiting per IP (5 intents/minut)
+  const rateLimit = reauthRateLimiter.check(clientIp);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'S\'ha superat el límit d\'intents de re-autenticació. Espereu 1 minut.',
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('bancactiu_session')?.value;
+    const session = verifySessionToken(sessionCookie);
 
-    let sessionUser: any = null;
-    if (sessionCookie) {
-      try {
-        sessionUser = JSON.parse(decodeURIComponent(sessionCookie));
-      } catch {
-        // Ignorar error de parseig
-      }
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Sessió no vàlida o caducada. Cal iniciar sessió prèviament.',
+        },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
     const {
-      dni,
       password,
       actionName = 'Acció Sensible',
       actionDetails = '',
       justification = '',
       module = 'bancactiu-nexus',
-      role
     } = body;
 
-    const cleanDni = (dni || sessionUser?.dni || '').trim().toUpperCase();
-    const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const cleanDni = session.dni;
 
-    // 1. Validació de paràmetres obligatoris
-    if (!cleanDni || !password) {
-      await sharedDb.logAudit({
-        actorDni: cleanDni || 'DESCONEGUT',
-        actorNom: sessionUser?.name || 'Sessió Anònima',
-        appSource: module,
-        accio: 'REAUTENTICACIO_ACCIO_SENSIBLE_DENEGADA',
-        entitat: `ENS_SENSIBLE: ${actionName}`,
-        detall: `Intent de re-autenticació rebutjat per absència de DNI o contrasenya per a l'acció [${actionName}].`,
-        ip: clientIp,
-        rgpdConforme: true,
-      });
-
+    if (!password) {
       return NextResponse.json(
         {
           success: false,
-          error: 'El DNI i la contrasenya de confirmació són estrictament obligatoris.',
+          error: 'La contrasenya de confirmació és estrictament obligatòria.',
         },
         { status: 400 }
       );
     }
 
-    // 2. Comprovació de rols sensibles (Superadministrador, Gerència, Direcció)
-    const effectiveRole = (role || sessionUser?.role || 'SUPERADMIN').toUpperCase();
+    // Comprovació de rols sensibles autoritzats
+    const effectiveRole = session.role.toUpperCase();
     const isSensitiveRole =
       effectiveRole === 'SUPERADMIN' ||
+      effectiveRole === 'SUPER_ADMIN' ||
       effectiveRole === 'GERENCIA' ||
       effectiveRole === 'DIRECCIO' ||
       effectiveRole === 'DIRECTOR' ||
       effectiveRole === 'TECNIC_SALUT';
 
     if (!isSensitiveRole) {
-      await sharedDb.logAudit({
-        actorDni: cleanDni,
-        actorNom: sessionUser?.name || 'Usuari sense privilegis',
-        appSource: module,
-        accio: 'REAUTENTICACIO_ROL_INSUFICIENT',
-        entitat: `ENS_SENSIBLE: ${actionName}`,
-        detall: `Intent d'autorització denegat. El rol ${effectiveRole} no disposa de privilegis per a l'acció sensible [${actionName}].`,
-        ip: clientIp,
-        rgpdConforme: true,
-      });
-
       return NextResponse.json(
         {
           success: false,
@@ -84,7 +78,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Verificació de credencials contra la base de dades compartida i server credentials store
+    // Verificació de credencials contra la base de dades i magatzem del servidor
     let isValidPassword = false;
     const verification = await sharedDb.verifyUserPassword(cleanDni, password);
     if (verification.valid) {
@@ -96,32 +90,26 @@ export async function POST(request: Request) {
         if (sUser && sUser.currentPassword) {
           isValidPassword = verifyPassword(password.trim(), sUser.currentPassword);
         }
-        if (!isValidPassword) {
-          try {
-            const cookieHeader = request.headers.get('cookie') || '';
-            const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
-            if (match) {
-              const vault = JSON.parse(decodeURIComponent(match[1]));
-              const vEntry = vault[cleanDni] || (cleanDni.includes('ADMIN') ? vault['ADMINISTRADOR'] : null);
-              if (vEntry?.passwordHash) {
-                isValidPassword = verifyPassword(password.trim(), vEntry.passwordHash);
-              }
-            }
-          } catch {}
-        }
-      } catch {
-        // Fallback transparent
-      }
+      } catch {}
     }
 
-    if (!isValidPassword && (password === 'SuperAdmin*2026!' || password === 'Mireia*2026!' || (cleanDni === '52622304Y' && password.length >= 8))) {
-      isValidPassword = true;
-    }
-
+    // CERO TOLERANCIA A BACKDOORS: Eliminades claus fixes i comparacions laxes
     if (!isValidPassword) {
+      recordIntrusionEvent({
+        ip: clientIp,
+        route: '/api/auth/reauthenticate',
+        method: 'POST',
+        attemptType: 'Accés No Autoritzat',
+        userAgent: request.headers.get('user-agent') || 'Desconegut',
+        details: `Contrasenya incorrecta en re-autenticació per a l'acció [${actionName}] (Usuari: ${cleanDni})`,
+        severity: 'HIGH',
+        status: 'BLOCKED',
+        locationInfo: 'IP d\'Accés',
+      });
+
       await sharedDb.logAudit({
         actorDni: cleanDni,
-        actorNom: sessionUser?.name || 'SuperAdmin / Directiu',
+        actorNom: session.name,
         appSource: module,
         accio: 'REAUTENTICACIO_CONTRASENYA_INCORRECTA',
         entitat: `ENS_SENSIBLE: ${actionName}`,
@@ -133,22 +121,22 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'La contrasenya de confirmació és incorrecta. Aquest incident s\'ha registrat a l\'auditoria perimetral.',
+          error: 'La contrasenya de confirmació és incorrecta. L\'incident s\'ha registrat a l\'auditoria perimetral.',
         },
         { status: 401 }
       );
     }
 
-    // 4. Registre d'auditoria inmutable ENS Nivell Alt & RGPD
+    // Registre d'auditoria immutable ENS Nivell Alt & RGPD
     const auditRecord = await sharedDb.logAudit({
       actorDni: cleanDni,
-      actorNom: sessionUser?.name || 'Mireia Valls (SuperAdmin)',
+      actorNom: session.name,
       appSource: module,
       accio: 'REAUTENTICACIO_ACCIO_SENSIBLE_APROVADA',
       entitat: `ENS_SENSIBLE: ${actionName}`,
-      detall: `Doble factor verificat amb èxit. Acció autoritzada: [${actionName}]. Motiu institucional: ${
+      detall: `Doble factor verificat amb èxit. Acció autoritzada: [${actionName}]. Motiu: ${
         justification || 'Operativa ordinària de governança'
-      }. Detalls tècnics: ${actionDetails || 'Concessió o paràmetres de xarxa'}.`,
+      }. Detalls: ${actionDetails || 'Paràmetres perimetrals'}.`,
       ip: clientIp,
       rgpdConforme: true,
     });

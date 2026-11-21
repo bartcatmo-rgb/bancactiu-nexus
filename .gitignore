@@ -19,6 +19,7 @@ dist/
 .env.development
 .env.test
 .env.production
+.env*
 !.env.example
 
 # Debug and Logs
@@ -41,4 +42,5 @@ desktop.ini
 *.swo
 
 .vercel
-.env*
+*.tsbuildinfo
+data/db_credentials_users.json

@@ -10,10 +10,8 @@ export const revalidate = 0;
  * Retorna l'informe en temps real de l'escaneig de vulnerabilitats i protecció perimetral.
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const guard = guardApiAccess(request);
-  if (!guard.allowed && guard.response) {
-    return guard.response;
-  }
+  const guard = guardApiAccess(request, { requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN'] });
+  if (!guard.allowed) return guard.response!;
 
   try {
     const scanResult = await runVulnerabilityScan();

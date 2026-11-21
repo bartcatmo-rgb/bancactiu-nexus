@@ -41,17 +41,17 @@ export interface PasswordValidationResult {
 
 export const INITIAL_SYSTEM_USERS: SystemUser[] = [
   {
-    id: 'user-superadmin-bartolome',
+    id: 'user-superadmin-govern',
     username: '52622304Y',
     dni: '52622304Y',
-    email: 'bartcatmo@gmail.com',
-    telefono: '615602174',
-    nombre: 'Bartolomé Cachinero Moreno',
+    email: 'superadmin.govern@bancactiu.cat',
+    telefono: '934000001',
+    nombre: 'SuperAdmin Govern TI',
     rol: 'SUPER_ADMIN',
     workplace: 'Consola Central TI · Govern & Arquitectura Global BancActiu',
     defaultEntity: 'ALL',
     avatarColor: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-    initials: 'BC',
+    initials: 'SG',
     currentPassword: HASH_ROCA_PBKDF2,
     mustChangePassword: false,
     lastPasswordChangeDate: '2026-11-19T00:00:00.000Z',
@@ -59,17 +59,17 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     passwordHistory: [HASH_1234_PBKDF2, HASH_ROCA_PBKDF2],
   },
   {
-    id: 'user-superadmin-marc',
+    id: 'user-superadmin-tecnic',
     username: '47956602S',
     dni: '47956602S',
-    email: 'marccachinero@gmail.com',
-    telefono: '640537414',
-    nombre: 'Marc Cachinero Baranda',
+    email: 'superadmin.tecnic@bancactiu.cat',
+    telefono: '934000002',
+    nombre: 'SuperAdmin Pentest TI',
     rol: 'SUPER_ADMIN',
     workplace: 'Consola Central TI · Pentest & Proves d\'Intrusió BancActiu',
     defaultEntity: 'ALL',
     avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-    initials: 'MC',
+    initials: 'SP',
     currentPassword: HASH_1234_PBKDF2,
     mustChangePassword: true,
     lastPasswordChangeDate: '2026-11-19T00:00:00.000Z',
@@ -91,12 +91,10 @@ export function loadSystemUsers(): SystemUser[] {
       return INITIAL_SYSTEM_USERS;
     }
     let parsed = JSON.parse(raw) as SystemUser[];
-    // Neteja estricta de qualsevol usuari antic o dades de prova residuals
     parsed = parsed.filter(u => 
       u && 
       (u.dni?.toUpperCase() === '52622304Y' || u.dni?.toUpperCase() === '47956602S' ||
-       u.username?.toUpperCase() === '52622304Y' || u.username?.toUpperCase() === '47956602S') &&
-      !u.nombre?.includes('Mireia')
+       u.username?.toUpperCase() === '52622304Y' || u.username?.toUpperCase() === '47956602S')
     );
     if (parsed.length === 0) {
       parsed = INITIAL_SYSTEM_USERS;
@@ -104,7 +102,6 @@ export function loadSystemUsers(): SystemUser[] {
       return parsed;
     }
 
-    // Assegura que els dos únics administradors (Bartolomé i Marc) hi siguin sempre presents
     for (const initUser of INITIAL_SYSTEM_USERS) {
       if (!parsed.some(u => u.dni?.toUpperCase() === initUser.dni)) {
         parsed.unshift(initUser);
@@ -128,11 +125,11 @@ export function saveSystemUsers(users: SystemUser[]): void {
 }
 
 /**
- * Valida les condicions de seguretat de la contrasenya:
- * 1. Mínim 8 caràcters
- * 2. Lletres i números
- * 3. 2 símbols obligatoris com a mínim
- * 4. No repetir cap de les últimes 10 contrasenyes utilitzades
+ * Valida les condicions de seguretat de la contrasenya (ENS Nivell Alt):
+ * 1. Mínim 10 caràcters
+ * 2. Majúscules, minúscules i números
+ * 3. Almenys 1 caràcter especial
+ * 4. No repetir cap de les últimes 5 contrasenyes utilitzades ni la inicial '1234'
  */
 export function validatePasswordSecurity(
   newPassword: string,
@@ -148,10 +145,9 @@ export function validatePasswordSecurity(
   const hasLetters = hasUpper && hasLower;
   const hasNumbers = /[0-9]/.test(cleanPass);
 
-  // Recompte de símbols (caràcters no alfanumèrics)
   const symbols = cleanPass.match(/[^a-zA-Z0-9]/g) || [];
   const symbolCount = symbols.length;
-  const hasAtLeastTwoSymbols = symbolCount >= 1; // Almenys 1 caràcter especial (o 2 segons política)
+  const hasAtLeastTwoSymbols = symbolCount >= 1;
 
   // Comprova les últimes 5 contrasenyes guardades a l'historial i la clau inicial 1234
   const last5 = (Array.isArray(history) ? history : []).slice(0, 5);
@@ -230,7 +226,7 @@ export type AuthResult = {
 };
 
 /**
- * Autentica un usuari per DNI, username o correu electrònic amb protecció contra atacs de força bruta
+ * Autentica un usuari per DNI o username amb comprovació estricta PBKDF2 (sense portes del darrere)
  */
 export function authenticateUser(identifier: string, passAttempt: string): AuthResult {
   const users = loadSystemUsers();
@@ -265,18 +261,17 @@ export function authenticateUser(identifier: string, passAttempt: string): AuthR
         user,
         reason: 'ACCOUNT_LOCKED',
         lockoutMinutesRemaining: minutesRemaining,
-        message: `⛔ Compte bloquejat per seguretat a causa de múltiples intents fallits consecutius (Atac de força bruta detectat). Resten ${minutesRemaining} minuts per al desbloqueig automàtic o contacteu amb el Superadministrador.`,
+        message: `⛔ Compte bloquejat per seguretat. Resten ${minutesRemaining} minuts per al desbloqueig automàtic.`,
       };
     } else {
-      // El bloqueig ha expirat: resetegem intents
       user.lockoutUntil = null;
       user.failedLoginAttempts = 0;
       saveSystemUsers(users);
     }
   }
 
-  // Comprovació de contrasenya (o clau mestra de recuperació / demo)
-  const isMatch = cleanPass === user.currentPassword || cleanPass === 'Demo2026' || (user.rol === 'SUPER_ADMIN' && cleanPass === '1234');
+  // Verificació criptogràfica estricta PBKDF2 (CERO BYPASS: eliminat Demo2026 o comparació plana)
+  const isMatch = verifyPassword(cleanPass, user.currentPassword);
   if (!isMatch) {
     const currentAttempts = (user.failedLoginAttempts || 0) + 1;
     user.failedLoginAttempts = currentAttempts;
@@ -291,7 +286,7 @@ export function authenticateUser(identifier: string, passAttempt: string): AuthR
         user,
         reason: 'ACCOUNT_LOCKED',
         lockoutMinutesRemaining: LOCKOUT_DURATION_MINUTES,
-        message: `⛔ S'han superat els ${MAX_LOGIN_ATTEMPTS} intents permesos. Compte bloquejat durant ${LOCKOUT_DURATION_MINUTES} minuts per protegir les dades mèdiques contra atacs de força bruta.`,
+        message: `⛔ S'han superat els ${MAX_LOGIN_ATTEMPTS} intents permesos. Compte bloquejat durant ${LOCKOUT_DURATION_MINUTES} minuts.`,
       };
     } else {
       saveSystemUsers(users);
@@ -301,19 +296,19 @@ export function authenticateUser(identifier: string, passAttempt: string): AuthR
         user,
         reason: 'INVALID_PASSWORD',
         remainingAttempts: remaining,
-        message: `Contrasenya incorrecta. Us resten ${remaining} intent${remaining > 1 ? 's' : ''} abans del bloqueig de seguretat del compte.`,
+        message: `Contrasenya incorrecta. Us resten ${remaining} intent${remaining > 1 ? 's' : ''} abans del bloqueig de seguretat.`,
       };
     }
   }
 
-  // ACCÉS CORRECTE: Reset de fallades de seguretat
+  // Reset de fallades de seguretat
   if (user.failedLoginAttempts || user.lockoutUntil) {
     user.failedLoginAttempts = 0;
     user.lockoutUntil = null;
     saveSystemUsers(users);
   }
 
-  // 1. Canvi obligatori al primer inici (ex: pass provisional 1234)
+  // 1. Canvi obligatori al primer inici
   if (user.mustChangePassword) {
     return {
       success: false,
@@ -341,174 +336,13 @@ export function authenticateUser(identifier: string, passAttempt: string): AuthR
   };
 }
 
-/**
- * Desbloqueja manualment un compte d'usuari (acció per a Superadministrador)
- */
-export function unlockUserAccount(userId: string): { success: boolean; message: string } {
-  const users = loadSystemUsers();
-  const user = users.find((u) => u.id === userId || u.username === userId || u.dni === userId);
-  if (!user) {
-    return { success: false, message: 'Usuari no trobat.' };
-  }
-  user.failedLoginAttempts = 0;
-  user.lockoutUntil = null;
-  saveSystemUsers(users);
-  return { success: true, message: `El compte de ${user.nombre} ha estat desbloquejat amb èxit.` };
-}
-
-/**
- * Canvia la contrasenya d'un usuari guardant l'antiga a l'historial de les 10 últimes
- */
-export function changeUserPassword(userId: string, newPassword: string): { success: boolean; error?: string } {
-  const users = loadSystemUsers();
-  const userIndex = users.findIndex((u) => u.id === userId);
-  if (userIndex === -1) {
-    return { success: false, error: 'Usuari no trobat al sistema.' };
-  }
-
-  const user = users[userIndex];
-  const history = Array.isArray(user.passwordHistory) ? user.passwordHistory : [];
-
-  const validation = validatePasswordSecurity(newPassword, history);
-  if (!validation.isValid) {
-    return { success: false, error: validation.errors[0] };
-  }
-
-  // Afegeix la contrasenya actual a l'historial (màxim 10 elements)
-  const updatedHistory = [...history, user.currentPassword].slice(-10);
-
-  const updatedUser: SystemUser = {
-    ...user,
-    currentPassword: newPassword.trim(),
-    mustChangePassword: false,
-    lastPasswordChangeDate: new Date().toISOString(),
-    passwordHistory: updatedHistory,
-    resetToken: null,
-    resetTokenExpires: null,
-  };
-
-  users[userIndex] = updatedUser;
-  saveSystemUsers(users);
-
-  return { success: true };
-}
-
-/**
- * Sol·licitud de canvi de contrasenya per oblit: genera un testimoni de restabliment i envia correu
- */
-export function requestPasswordReset(usernameOrEmail: string): {
-  success: boolean;
-  message: string;
-  email?: string;
-  resetUrl?: string;
-  token?: string;
-} {
-  const users = loadSystemUsers();
-  const clean = usernameOrEmail.trim().toUpperCase();
-
-  const user = users.find(
-    (u) =>
-      u.username.toUpperCase() === clean ||
-      u.dni.toUpperCase() === clean ||
-      u.email.toUpperCase() === clean
-  );
-
-  if (!user) {
-    return {
-      success: false,
-      message: 'No s’ha trobat cap compte associat amb aquest identificador o correu electrònic.',
-    };
-  }
-
-  // Genera un token aleatori segur i caducitat a 2 hores
-  const token = `rst_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
-  const expires = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-
-  const userIndex = users.findIndex((u) => u.id === user.id);
-  users[userIndex] = {
-    ...user,
-    resetToken: token,
-    resetTokenExpires: expires,
-  };
-  saveSystemUsers(users);
-
-  const resetUrl = `/recuperar-contrasenya?token=${token}`;
-
-  return {
-    success: true,
-    message: `S’ha enviat un correu de seguretat amb l’enllaç de restabliment a: ${user.email}`,
-    email: user.email,
-    token,
-    resetUrl,
-  };
-}
-
-/**
- * Valida un token de recuperació de contrasenya
- */
-export function validateResetToken(token: string): { valid: boolean; user?: SystemUser; error?: string } {
-  const users = loadSystemUsers();
-  const user = users.find((u) => u.resetToken === token);
-
-  if (!user) {
-    return { valid: false, error: 'L’enllaç de recuperació és invàlid o ja ha estat utilitzat.' };
-  }
-
-  if (user.resetTokenExpires && new Date(user.resetTokenExpires).getTime() < Date.now()) {
-    return { valid: false, error: 'L’enllaç de recuperació ha caducat (vigència màxima de 2 hores). Sol·liciteu-ne un de nou.' };
-  }
-
-  return { valid: true, user };
-}
-
-/**
- * Restableix la contrasenya mitjançant token de recuperació
- */
-export function resetPasswordWithToken(token: string, newPassword: string): { success: boolean; error?: string } {
-  const check = validateResetToken(token);
-  if (!check.valid || !check.user) {
-    return { success: false, error: check.error || 'Token no vàlid.' };
-  }
-  return changeUserPassword(check.user.id, newPassword);
-}
-
-
-const DEMO_SWITCHER_KEY = 'bancactiu_allow_demo_switcher_v1';
-
-export function isDemoSwitcherAllowed(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    const val = localStorage.getItem(DEMO_SWITCHER_KEY);
-    return val === null ? true : val === 'true';
-  } catch {
-    return true;
-  }
-}
-
-export function setDemoSwitcherAllowed(allowed: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(DEMO_SWITCHER_KEY, allowed ? 'true' : 'false');
-    window.dispatchEvent(new CustomEvent('bancactiu-switcher-changed', { detail: { allowed } }));
-  } catch {
-    // ignore
-  }
-}
-
 export function isSuperAdminDni(dniOrUsername?: string): boolean {
   if (!dniOrUsername) return false;
   const clean = dniOrUsername.trim().toUpperCase();
   return (
     clean === '52622304Y' ||
     clean === '47956602S' ||
-    clean === 'BARTO' ||
-    clean === 'MARC' ||
-    clean === 'ADMIN' ||
-    clean === 'ADMINISTRADOR' ||
     clean === 'SUPERADMIN' ||
-    clean === 'BARTCATMO@GMAIL.COM' ||
-    clean === 'MARCCACHINERO@GMAIL.COM' ||
-    clean === '615602174' ||
-    clean === '640537414'
+    clean === 'ADMIN'
   );
 }

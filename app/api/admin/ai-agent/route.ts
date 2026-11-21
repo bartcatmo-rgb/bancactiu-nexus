@@ -10,10 +10,8 @@ export const revalidate = 0;
  * Retorna l'històric d'intervencions de l'Assistent de IA per al Superadministrador.
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const guard = guardApiAccess(request);
-  if (!guard.allowed && guard.response) {
-    return guard.response;
-  }
+  const guard = guardApiAccess(request, { requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN'] });
+  if (!guard.allowed) return guard.response!;
 
   try {
     const history = getAIAgentHistory();
@@ -36,12 +34,10 @@ export async function GET(request: Request): Promise<NextResponse> {
  */
 export async function POST(request: Request): Promise<NextResponse> {
   const guard = guardApiAccess(request, {
-    requiredRoles: ['SUPER_ADMIN'],
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN'],
     isWriteOperation: true,
   });
-  if (!guard.allowed && guard.response) {
-    return guard.response;
-  }
+  if (!guard.allowed) return guard.response!;
 
   try {
     const body = await request.json();

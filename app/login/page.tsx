@@ -3,18 +3,11 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Shield,
   Lock,
-  KeyRound,
-  UserCheck,
-  Award,
   Sparkles,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  FileCheck2,
-  Building2,
-  Layers,
   Key,
   Eye,
   EyeOff,
@@ -25,9 +18,7 @@ import {
   RadialAuraBackground,
   GlassCard,
   GlassButton,
-  GlassBadge
 } from '@bancactiu/ui-glass';
-import { isIdCatMovilEnabled } from '@/lib/feature-flags';
 
 function LoginForm() {
   const router = useRouter();
@@ -35,56 +26,29 @@ function LoginForm() {
   const rawRedirect = searchParams.get('redirect');
   const redirectPath = rawRedirect && rawRedirect !== '/login' && !rawRedirect.startsWith('/login') ? rawRedirect : '/';
 
-  // Mode d'autenticació: credentials / certificate (idCAT Mòbil)
-  const [authMode, setAuthMode] = useState<'credentials' | 'certificate'>('credentials');
-
-  // Feature Flag: idCAT Mòbil (AOC) desactivat per defecte (isIdCatMovilEnabled = false)
-  const [idCatMovilActive, setIdCatMovilActive] = useState<boolean>(false);
-
-  React.useEffect(() => {
-    // Lectura del feature flag des de magatzem o paràmetre d'activació
-    if (typeof window !== 'undefined') {
-      const active = isIdCatMovilEnabled();
-      setIdCatMovilActive(active);
-
-      // Escoltar canvis dinàmics en temps real (ex. activat des de SuperAdmin)
-      const handleFlagChange = () => {
-        const updated = isIdCatMovilEnabled();
-        setIdCatMovilActive(updated);
-        if (!updated) {
-          setAuthMode('credentials');
-        }
-      };
-
-      window.addEventListener('bancactiu_feature_flags_changed', handleFlagChange);
-      return () => window.removeEventListener('bancactiu_feature_flags_changed', handleFlagChange);
-    }
-  }, []);
-
   // Neteja imperativa d'estat residual en carregar /login (Elimina vulnerabilitat d'autologin)
   React.useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        // Netejar sessionStorage i claus residuals de sessió a localStorage
         sessionStorage.clear();
         localStorage.removeItem('bancactiu_session_cache');
         localStorage.removeItem('bancactiu_user');
         localStorage.removeItem('bancactiu_auth_state');
+        localStorage.removeItem('bancactiu_auth_vault');
         localStorage.removeItem('bancactiu_security_users_cornella_v1');
         localStorage.removeItem('bancactiu_usuaris_cornella_v1');
 
-        // Invalidar de forma imperativa la cookie de sessió residual
-        document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Lax;';
+        // Invalidar cookie residual de sessió
+        document.cookie = 'bancactiu_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; SameSite=Strict;';
       }
 
-      // Notificar al backend la neteja de la cookie bancactiu_session
       fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
     } catch (e) {
       console.warn('[LOGIN-CLEANUP] Error netejant estat residual:', e);
     }
   }, []);
 
-  // Camps obligatòriament buits per requisit estricte de seguretat (sense valors per defecte)
+  // Camps obligatòriament buits per requisit estricte de seguretat
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const identifierInputRef = React.useRef<HTMLInputElement>(null);
@@ -119,6 +83,7 @@ function LoginForm() {
   const [isFirstTimeSetup, setIsFirstTimeSetup] = useState(false);
   const [isExpired90Days, setIsExpired90Days] = useState(false);
   const [targetDni, setTargetDni] = useState('');
+  const [currentPasswordInput, setCurrentPasswordInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -136,41 +101,28 @@ function LoginForm() {
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
   const isPasswordValid = hasMinLength && hasUpper && hasLower && hasNumber && hasSpecial && passwordsMatch;
 
-  const handleLogin = async (e?: React.FormEvent, customMode?: 'credentials' | 'certificate') => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const mode = customMode || authMode;
-
-    let vaultHeader = '';
-    try {
-      if (typeof window !== 'undefined') {
-        vaultHeader = localStorage.getItem('bancactiu_auth_vault') || '';
-      }
-    } catch {}
-
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(vaultHeader ? { 'x-bancactiu-vault': encodeURIComponent(vaultHeader) } : {})
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          authMethod: mode,
           identifier: identifier.trim(),
-          password
-        })
+          password,
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Comprovar si es requereix configurar la contrasenya inicial o renovació trimestral (ENS 90 dies)
         if (data.requirePasswordSetup) {
           setTargetDni(data.dni || identifier.trim().toUpperCase() || '');
+          setCurrentPasswordInput(password);
           setIsFirstTimeSetup(true);
           setIsExpired90Days(Boolean(data.isExpired90Days));
           if (data.isExpired90Days) {
@@ -181,7 +133,6 @@ function LoginForm() {
           return;
         }
 
-        // Accés completat, navegació imperativa al Gateway Launcher (elimina bucles de cache de Next.js)
         window.location.href = redirectPath;
       } else {
         setErrorMsg(data.error || 'Credencials no vàlides. Verifiqueu les dades.');
@@ -214,19 +165,15 @@ function LoginForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dni: targetDni || identifier.trim().toUpperCase() || '',
+          currentPassword: currentPasswordInput || password,
           newPassword,
-          confirmPassword
-        })
+          confirmPassword,
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        if (data.vault && typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('bancactiu_auth_vault', JSON.stringify(data.vault));
-          } catch {}
-        }
         setSuccessMsg('Contrasenya configurada amb èxit. Accedint al sistema...');
         setTimeout(() => {
           window.location.href = redirectPath;
@@ -291,7 +238,7 @@ function LoginForm() {
 
         {/* VISTA 1: Formulari de Primer Inici (First-Time Password Setup) */}
         {isFirstTimeSetup ? (
-          <form onSubmit={handleSetupPassword} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" data-form-type="other" className="space-y-4">
+          <form onSubmit={handleSetupPassword} autoComplete="off" autoCapitalize="off" spellCheck={false} className="space-y-4">
             {targetDni && (
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
                 Usuari vinculat: <strong className="font-mono text-slate-900">{targetDni}</strong>
@@ -315,8 +262,6 @@ function LoginForm() {
                   autoComplete="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  data-lpignore="true"
-                  data-form-type="other"
                   placeholder=""
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all pr-10"
                 />
@@ -346,8 +291,6 @@ function LoginForm() {
                 autoComplete="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                data-lpignore="true"
-                data-form-type="other"
                 placeholder=""
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 transition-all"
               />
@@ -400,148 +343,86 @@ function LoginForm() {
             </button>
           </form>
         ) : (
-          /* VISTA 2: Formulari Estàndard d'Inici de Sessió (Sense Autofill) */
-          <>
-            {/* Selector de mètode: Únicament visible si el Feature Flag idCAT Mòbil està activat des de SuperAdmin */}
-            {idCatMovilActive && (
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-3 sm:mb-4 animate-fadeIn">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('credentials')}
-                  className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    authMode === 'credentials'
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <KeyRound size={13} />
-                  DNI / Clau
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('certificate')}
-                  className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    authMode === 'certificate'
-                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Award size={13} />
-                  idCAT Mòbil / AOC
-                </button>
+          /* VISTA 2: Formulari Estàndard d'Inici de Sessió per Credencials Corporatives */
+          <form onSubmit={handleLogin} autoComplete="off" autoCapitalize="off" spellCheck={false} className="space-y-3 sm:space-y-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Identificador d'Accés (DNI / Codi)
+              </label>
+              <input
+                ref={identifierInputRef}
+                type="text"
+                name="random_identifier_field_not_saved"
+                id="random_identifier_field_not_saved"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                required
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readOnly')}
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder=""
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all uppercase"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Clau d'Accés
+                </label>
+                <span className="text-[10px] text-purple-700 font-mono font-semibold">
+                  Nivell 5 Protegit
+                </span>
               </div>
-            )}
+              <input
+                ref={passwordInputRef}
+                type="password"
+                name="random_secret_field_not_saved"
+                id="random_secret_field_not_saved"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readOnly')}
+                autoComplete="new-password"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder=""
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all"
+              />
+            </div>
 
-            {!idCatMovilActive || authMode === 'credentials' ? (
-              <form onSubmit={(e) => handleLogin(e, 'credentials')} autoComplete="off" autoCapitalize="off" spellCheck={false} data-lpignore="true" data-form-type="other" className="space-y-3 sm:space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Identificador d'Accés
-                  </label>
-                  <input
-                    ref={identifierInputRef}
-                    type="text"
-                    name="random_identifier_field_not_saved"
-                    id="random_identifier_field_not_saved"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    required
-                    readOnly
-                    onFocus={(e) => e.target.removeAttribute('readOnly')}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    data-lpignore="true"
-                    data-form-type="other"
-                    placeholder=""
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all uppercase"
-                  />
-                </div>
+            <GlassButton
+              type="submit"
+              variant="primary"
+              disabled={isLoading || !identifier.trim()}
+              className="w-full justify-center py-2 mt-1 sm:mt-2"
+              icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <ArrowRight size={16} />}
+            >
+              {isLoading ? 'Verificant Identitat...' : 'Iniciar Sessió Segura'}
+            </GlassButton>
 
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-semibold text-slate-700">
-                      Clau d'Accés
-                    </label>
-                    <span className="text-[10px] text-purple-700 font-mono font-semibold">
-                      Nivell 5 Protegit
-                    </span>
-                  </div>
-                  <input
-                    ref={passwordInputRef}
-                    type="password"
-                    name="random_secret_field_not_saved"
-                    id="random_secret_field_not_saved"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    readOnly
-                    onFocus={(e) => e.target.removeAttribute('readOnly')}
-                    autoComplete="new-password"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    data-lpignore="true"
-                    data-form-type="other"
-                    placeholder=""
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-cyan-500 focus:bg-white focus:ring-1 focus:ring-cyan-500 transition-all"
-                  />
-                </div>
-
-                <GlassButton
-                  type="submit"
-                  variant="primary"
-                  disabled={isLoading || !identifier.trim()}
-                  className="w-full justify-center py-2 mt-1 sm:mt-2"
-                  icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <ArrowRight size={16} />}
-                >
-                  {isLoading ? 'Verificant Identitat...' : 'Iniciar Sessió Segura'}
-                </GlassButton>
-
-                {/* Opció per establir primer inici */}
-                <div className="pt-2 border-t border-slate-100 text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!identifier.trim()) {
-                        setErrorMsg("Cal indicar el vostre identificador d'accés abans de configurar la clau inicial.");
-                        return;
-                      }
-                      setTargetDni(identifier.trim().toUpperCase());
-                      setIsFirstTimeSetup(true);
-                      setErrorMsg(null);
-                      setSuccessMsg('Configuració de primer accés. Definiu una nova contrasenya segura.');
-                    }}
-                    className="text-xs text-amber-700 hover:text-amber-800 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
-                  >
-                    <Key size={12} />
-                    Primer accés? Definiu la vostra contrasenya inicial
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-3 text-center animate-fadeIn">
-                <div className="p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-left space-y-1.5">
-                  <div className="flex items-center gap-2 text-cyan-800 text-xs font-bold">
-                    <FileCheck2 size={15} />
-                    Autenticació idCAT Mòbil & Certificats AOC
-                  </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Identitat digital corporativa mitjançant idCAT Mòbil (Consorci AOC), T-CAT de Salut, DNI Electrònic o Cl@ve de l'Administració Pública.
-                  </p>
-                </div>
-
-                <GlassButton
-                  type="button"
-                  variant="primary"
-                  disabled={isLoading}
-                  onClick={() => handleLogin(undefined, 'certificate')}
-                  className="w-full justify-center py-2"
-                  icon={isLoading ? <Sparkles className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                >
-                  {isLoading ? 'Autenticant via idCAT Mòbil...' : 'Validar Identitat via AOC / idCAT'}
-                </GlassButton>
-              </div>
-            )}
-          </>
+            <div className="pt-2 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!identifier.trim()) {
+                    setErrorMsg("Cal indicar el vostre identificador d'accés abans de configurar la clau inicial.");
+                    return;
+                  }
+                  setTargetDni(identifier.trim().toUpperCase());
+                  setIsFirstTimeSetup(true);
+                  setErrorMsg(null);
+                  setSuccessMsg('Configuració de primer accés. Definiu una nova contrasenya segura.');
+                }}
+                className="text-xs text-amber-700 hover:text-amber-800 transition-colors flex items-center justify-center gap-1 mx-auto font-medium"
+              >
+                <Key size={12} />
+                Primer accés? Definiu la vostra contrasenya inicial
+              </button>
+            </div>
+          </form>
         )}
       </GlassCard>
 
@@ -581,9 +462,7 @@ function useTenantContext() {
         const parsed = JSON.parse(val);
         if (parsed && parsed.id) setTenant(parsed);
       }
-    } catch {
-      // Ignorar fallback
-    }
+    } catch {}
   }, []);
 
   return tenant;
@@ -595,59 +474,33 @@ export default function BancActiuLoginPage() {
   return (
     <RadialAuraBackground variant="nexus" className="min-h-screen w-full overflow-x-hidden overflow-y-auto">
       <div className="min-h-screen w-full flex flex-col justify-between p-3 sm:p-5 select-none overflow-y-auto custom-scrollbar">
-        {/* Capçalera d'accés institucional dinàmica */}
         <header className="flex justify-between items-center max-w-5xl w-full mx-auto pb-2 sm:pb-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200 p-1 shrink-0 overflow-hidden">
-              <img src="/bancactiu_icon.svg" alt="BancActiu" className="w-full h-full object-contain" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center text-white shadow-sm">
+              <Lock size={16} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  BancActiu <span className="text-cyan-600">3.0</span>
-                </h1>
-                <GlassBadge variant={tenant.badgeVariant || 'purple'} pulse>
-                  {tenant.isDefault ? "Porta d'Accés Segura" : tenant.badgeLabel}
-                </GlassBadge>
-              </div>
-              <p className="text-[11px] sm:text-xs text-slate-600">
-                {tenant.isDefault
-                  ? "Plataforma de Governança i Serveis Sociosanitaris"
-                  : `${tenant.name} · Accés Autoritzat`}
-              </p>
+              <h1 className="text-xs sm:text-sm font-bold text-slate-800 leading-none">
+                BancActiu 2.0 · Plataforma Unificada de Gestió Sociosanitària
+              </h1>
+              <span className="text-[10px] text-slate-500 font-medium">
+                Departament de Salut & Drets Socials · Generalitat de Catalunya
+              </span>
             </div>
           </div>
-
-          <div className="hidden sm:flex items-center gap-2">
-            <GlassBadge variant="emerald">
-              ENS Nivell Alt
-            </GlassBadge>
-            <GlassBadge variant="purple">
-              Zero-Trust
-            </GlassBadge>
-            {tenant.clientIp && tenant.clientIp !== '127.0.0.1' && (
-              <span className="text-[10px] font-mono text-slate-600 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
-                IP: {tenant.clientIp}
-              </span>
-            )}
-          </div>
+          <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200">
+            ENS Nivell Alt
+          </span>
         </header>
 
-        {/* Zona Central amb Suspense boundary */}
-        <main className="flex-1 flex items-center justify-center py-4 my-auto w-full">
-          <Suspense fallback={
-            <div className="text-slate-700 text-sm animate-pulse flex items-center gap-2">
-              <Shield className="w-5 h-5 text-purple-600 animate-spin" />
-              Carregant mòdul de seguretat...
-            </div>
-          }>
+        <main className="flex-1 flex items-center justify-center py-4">
+          <Suspense fallback={<div className="text-xs text-slate-400">Carregant portal segur...</div>}>
             <LoginForm />
           </Suspense>
         </main>
 
-        {/* Peu de pàgina neutre */}
-        <footer className="text-center text-[10px] sm:text-xs text-slate-500 pt-2 border-t border-slate-200 shrink-0">
-          BancActiu Nexus 3.0 &middot; Control Perimetral i Seguretat Zero-Trust &middot; {tenant.isDefault ? "Arquitectura Distribuïda" : tenant.shortName}
+        <footer className="text-center text-[10px] text-slate-400 py-2 border-t border-slate-100 shrink-0">
+          © 2026 BancActiu · Generalitat de Catalunya · Certificació ENS Nivell Alt
         </footer>
       </div>
     </RadialAuraBackground>

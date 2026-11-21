@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getLockdownState, isIpBlocked, isSuperAdminEmergencyActor } from '@/lib/security-lockdown';
+import { verifySessionToken, SessionPayload } from '@/lib/security/session';
 
 export interface GuardOptions {
   requiredRoles?: string[];
   allowCiutada?: boolean;
+  allowAnonymous?: boolean;
   isWriteOperation?: boolean;
   actorDni?: string;
 }
@@ -14,6 +16,8 @@ export interface GuardResult {
   clientIp: string;
   actorDni?: string;
   actorRol?: string;
+  actorName?: string;
+  session?: SessionPayload;
 }
 
 /**
@@ -30,9 +34,10 @@ export function getRequestClientIp(request: Request): string {
 /**
  * Guardià defensiu centralitzat per a tots els endpoints de l'App Router:
  * 1. Verifica si la IP està bloquejada pel WAF.
- * 2. Si el Mode Seguretat (Lockdown) està actiu, rebutja operacions d'escriptura (POST, PUT, DELETE)
- *    llevat que sigui un Superadministrador global (52622304Y / 48956602Z).
- * 3. Valida el rol de l'usuari contra els rols permesos per prevenir IDOR.
+ * 2. Verifica la sessió criptogràfica HMAC-SHA256 (Cero Confianza en capçaleres d'usuari).
+ * 3. Si el Mode Seguretat (Lockdown) està actiu, rebutja operacions d'escriptura
+ *    llevat que sigui un Superadministrador global.
+ * 4. Valida el rol de l'usuari contra els rols permesos per prevenir IDOR.
  */
 export function guardApiAccess(request: Request, options: GuardOptions = {}): GuardResult {
   const clientIp = getRequestClientIp(request);
@@ -54,11 +59,37 @@ export function guardApiAccess(request: Request, options: GuardOptions = {}): Gu
     };
   }
 
-  // Obtenim credencials transmeses a les capçaleres
-  const actorDni = (options.actorDni || request.headers.get('x-user-dni') || '').trim().toUpperCase();
-  const actorRol = (request.headers.get('x-user-role') || '').trim();
+  // 2. Extracció i verificació estricta de la sessió criptogràfica (Zero-Trust)
+  let session: SessionPayload | null = null;
+  const cookieHeader = request.headers.get('cookie') || '';
+  const sessionMatch = cookieHeader.match(/bancactiu_session=([^;]+)/);
+  if (sessionMatch) {
+    const rawToken = decodeURIComponent(sessionMatch[1]);
+    session = verifySessionToken(rawToken);
+  }
 
-  // 2. Verificació de Mode Seguretat (System Lockdown)
+  // CERO CONFIANZA: Ignorar completament x-user-dni i x-user-role de les capçaleres externes
+  const actorDni = session?.dni || '';
+  const actorRol = session?.role || '';
+  const actorName = session?.name || '';
+
+  if (!options.allowAnonymous && !session) {
+    return {
+      allowed: false,
+      clientIp,
+      response: NextResponse.json(
+        {
+          ok: false,
+          error: 'Accés no autoritzat',
+          missatge: 'Cal una sessió corporativa vàlida per accedir a aquest recurs.',
+          code: 'UNAUTHORIZED_SESSION_REQUIRED',
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // 3. Verificació de Mode Seguretat (System Lockdown)
   const lockdown = getLockdownState();
   if (lockdown.isLockdownActive && isWrite) {
     const isEmergencyAdmin = isSuperAdminEmergencyActor(actorDni);
@@ -68,6 +99,7 @@ export function guardApiAccess(request: Request, options: GuardOptions = {}): Gu
         clientIp,
         actorDni,
         actorRol,
+        actorName,
         response: NextResponse.json(
           {
             ok: false,
@@ -82,31 +114,38 @@ export function guardApiAccess(request: Request, options: GuardOptions = {}): Gu
     }
   }
 
-  // 3. Verificació de rols requerits
+  // 4. Verificació de rols requerits
   if (options.requiredRoles && options.requiredRoles.length > 0) {
-    // Si és superadmin té accés transversal a tot
-    if (isSuperAdminEmergencyActor(actorDni) || actorRol === 'SUPER_ADMIN') {
-      return { allowed: true, clientIp, actorDni, actorRol };
-    }
+    const isSuperAdmin =
+      isSuperAdminEmergencyActor(actorDni) ||
+      actorRol === 'SUPER_ADMIN' ||
+      actorRol === 'SUPERADMIN';
 
-    if (!actorRol || !options.requiredRoles.includes(actorRol)) {
-      return {
-        allowed: false,
-        clientIp,
-        actorDni,
-        actorRol,
-        response: NextResponse.json(
-          {
-            ok: false,
-            missatge: 'Accés no autoritzat: El vostre rol d’usuari no disposa dels privilegis requerits per a aquesta operació.',
-          },
-          { status: 403 }
-        ),
-      };
+    if (!isSuperAdmin) {
+      const hasRequiredRole = options.requiredRoles.some(
+        (r) => r.toUpperCase() === actorRol.toUpperCase()
+      );
+      if (!hasRequiredRole) {
+        return {
+          allowed: false,
+          clientIp,
+          actorDni,
+          actorRol,
+          actorName,
+          response: NextResponse.json(
+            {
+              ok: false,
+              missatge:
+                'Accés no autoritzat: El vostre rol d’usuari no disposa dels privilegis requerits per a aquesta operació.',
+            },
+            { status: 403 }
+          ),
+        };
+      }
     }
   }
 
-  return { allowed: true, clientIp, actorDni, actorRol };
+  return { allowed: true, clientIp, actorDni, actorRol, actorName, session: session || undefined };
 }
 
 /**
@@ -126,12 +165,11 @@ export function validateHierarchyScope(params: {
 }): { allowed: boolean; reason?: string } {
   const { actorRol, actorCentreId, actorTerritori, targetRol, targetCentreId, targetTerritori } = params;
 
-  if (actorRol === 'SUPER_ADMIN') {
+  if (actorRol === 'SUPER_ADMIN' || actorRol === 'SUPERADMIN') {
     return { allowed: true };
   }
 
   if (actorRol === 'GERENCIA_TERRITORIAL' || actorRol === 'TECNIC_SALUT_GERENCIA') {
-    // Només pot crear DIRECCIO_CAP o REFERENT_GESTIO_CAP
     const allowedTargetRoles = ['DIRECCIO_CAP', 'REFERENT_GESTIO_CAP', 'CAP_REFERENT'];
     if (!allowedTargetRoles.includes(targetRol)) {
       return {

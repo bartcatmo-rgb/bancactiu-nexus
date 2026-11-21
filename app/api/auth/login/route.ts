@@ -2,64 +2,42 @@ import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 import { verifyPassword } from '@/lib/crypto-security';
-import { getServerUsers, matchesIdentifier, saveUserPasswordDirect } from '@/lib/server-credentials-store';
+import { getServerUsers, matchesIdentifier } from '@/lib/server-credentials-store';
 import { recordIntrusionEvent, extractClientIp } from '@/lib/intrusion-store';
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/security/session';
+import { loginRateLimiter } from '@/lib/security/rate-limit';
 
 export async function POST(request: Request) {
+  const clientIp = extractClientIp(request);
+
+  // Rate Limiting per IP per prevenir atacs de força bruta (5 intents/minut)
+  const rateLimit = loginRateLimiter.check(clientIp);
+  if (!rateLimit.allowed) {
+    recordIntrusionEvent({
+      ip: clientIp,
+      route: '/api/auth/login',
+      method: 'POST',
+      attemptType: 'Força Bruta',
+      userAgent: request.headers.get('user-agent') || 'Desconegut',
+      details: 'Superat el llindar de 5 intents per minut al portal d\'accés',
+      severity: 'HIGH',
+      status: 'BLOCKED',
+      locationInfo: 'Perímetre Extern',
+    });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'S\'ha superat el límit d\'intents d\'inici de sessió. Espereu 1 minut abans de tornar-ho a provar.',
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { identifier, password, authMethod } = body;
+    const { identifier, password } = body;
 
-    // 1. Autenticació per Certificat Digital Oficial (idCAT / T-CAT corporatiu / DNIe)
-    if (authMethod === 'certificate') {
-      const authenticatedUser = {
-        userId: 'usr-superadmin-marc',
-        dni: '47956602S',
-        name: 'Marc Cachinero Baranda',
-        email: 'marccachinero@gmail.com',
-        role: 'SUPERADMIN',
-        roleLabel: 'SuperAdmin · Control Total Catalunya & IETI',
-        institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
-        certificateIssuer: 'EC-ACC (Agència Catalana de Certificació)',
-        authenticated: true,
-        authMethod: 'idCAT Certificat Digital (DNI 47956602S)',
-        passwordConfigured: true,
-        mustChangePassword: false,
-        isFirstLogin: false,
-        loginTime: new Date().toISOString(),
-      };
-
-      const response = NextResponse.json({
-        success: true,
-        user: authenticatedUser,
-        message: 'Sessió iniciada correctament via idCAT amb titular DNI 47956602S (Marc Cachinero Baranda)'
-      });
-
-      const sessionString = encodeURIComponent(JSON.stringify(authenticatedUser));
-      response.cookies.set('bancactiu_session', sessionString, {
-        path: '/',
-        httpOnly: false,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 8
-      });
-
-      // Registre immutable Merkle de l'accés oficial per certificat
-      try {
-        appendAuditBlock(
-          authenticatedUser.dni,
-          'CERTIFICATE_LOGIN_SUCCESS',
-          { issuer: authenticatedUser.certificateIssuer, email: authenticatedUser.email },
-          request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1'
-        );
-      } catch (err) {
-        console.warn('[MERKLE-AUDIT] Error registrant bloc:', err);
-      }
-
-      return response;
-    }
-
-    // 2. Autenticació per Credencials
     const rawIdentifier = (identifier || '').trim();
     if (!rawIdentifier) {
       return NextResponse.json(
@@ -70,11 +48,11 @@ export async function POST(request: Request) {
 
     const cleanId = rawIdentifier.toUpperCase();
 
-    // Mapeig intel·ligent d'identificadors
+    // Normalització d'identificadors corporatius
     let lookupTarget = cleanId;
-    if (cleanId === 'ADMINISTRADOR' || cleanId === 'ADMIN' || cleanId === 'BARTO' || cleanId === 'BARTCATMO@GMAIL.COM' || cleanId === '615602174') {
+    if (cleanId === 'ADMINISTRADOR' || cleanId === 'ADMIN') {
       lookupTarget = '52622304Y';
-    } else if (cleanId === 'SUPERADMIN' || cleanId === 'MARC' || cleanId === 'MARCCACHINERO@GMAIL.COM' || cleanId === '640537414') {
+    } else if (cleanId === 'SUPERADMIN') {
       lookupTarget = '47956602S';
     }
 
@@ -82,34 +60,29 @@ export async function POST(request: Request) {
     const userRecord = await sharedDb.getUserByDni(lookupTarget);
 
     if (!userRecord) {
-      try {
-        const clientIp = extractClientIp(request);
-        recordIntrusionEvent({
-          ip: clientIp,
-          route: '/api/auth/login',
-          method: 'POST',
-          attemptType: 'Accés No Autoritzat',
-          userAgent: request.headers.get('user-agent') || 'Desconegut',
-          details: `Intent d'accés amb identificador no existent: "${identifier}"`,
-          severity: 'HIGH',
-          status: 'BLOCKED',
-          locationInfo: 'Xarxa Externa'
-        });
-      } catch (err) {
-        console.warn('Error enregistrant intrusio:', err);
-      }
+      recordIntrusionEvent({
+        ip: clientIp,
+        route: '/api/auth/login',
+        method: 'POST',
+        attemptType: 'Accés No Autoritzat',
+        userAgent: request.headers.get('user-agent') || 'Desconegut',
+        details: `Intent d'accés amb identificador no existent: "${identifier}"`,
+        severity: 'HIGH',
+        status: 'BLOCKED',
+        locationInfo: 'Xarxa Externa',
+      });
 
       return NextResponse.json(
         {
           success: false,
           error: 'Usuari no autoritzat o no registrat a la plataforma BancActiu 2.0.',
-          triggerHoneypot: true
+          triggerHoneypot: true,
         },
         { status: 401 }
       );
     }
 
-    // Sincronitzar amb el magatzem segur persistent del servidor per evitar pèrdua d'estat en serverless cold-starts
+    // Sincronització amb el magatzem segur persistent del servidor
     try {
       const serverUsers = getServerUsers();
       const sUser = serverUsers.find((u) => matchesIdentifier(u, lookupTarget));
@@ -124,40 +97,7 @@ export async function POST(request: Request) {
         }
       }
     } catch {
-      // Fallback transparent a dades de sharedDb
-    }
-
-    // Sincronitzar addicionalment amb el vault persistent de la cookie o header (resistent a cold starts en Vercel)
-    try {
-      const cookieHeader = request.headers.get('cookie') || '';
-      let vaultJson = '';
-      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
-      if (match) {
-        vaultJson = decodeURIComponent(match[1]);
-      } else {
-        const headerVault = request.headers.get('x-bancactiu-vault');
-        if (headerVault) {
-          vaultJson = decodeURIComponent(headerVault);
-        }
-      }
-      if (vaultJson) {
-        const vault = JSON.parse(vaultJson);
-        const cleanTarget = lookupTarget.toUpperCase().trim();
-        const vEntry = vault[cleanTarget] || (cleanTarget.includes('ADMIN') ? vault['ADMINISTRADOR'] : null);
-        if (vEntry && vEntry.passwordHash && vEntry.passwordHash !== '1234') {
-          userRecord.passwordHash = vEntry.passwordHash;
-          userRecord.mustChangePassword = false;
-          userRecord.isFirstLogin = false;
-          if (vEntry.passwordHistory && Array.isArray(vEntry.passwordHistory)) {
-            userRecord.passwordHistory = vEntry.passwordHistory;
-          }
-          // Propagar immediatament a disc i sharedDb
-          saveUserPasswordDirect(lookupTarget, vEntry.passwordHash, userRecord.passwordHistory || [vEntry.passwordHash]);
-          sharedDb.setUserPassword(lookupTarget, vEntry.passwordHash, userRecord.passwordHistory);
-        }
-      }
-    } catch (e) {
-      console.warn('[LoginRoute] Error llegint bancactiu_auth_vault:', e);
+      // Fallback transparent
     }
 
     const attemptPassword = (password || '').trim();
@@ -167,30 +107,27 @@ export async function POST(request: Request) {
       userRecord.mustChangePassword === false
     );
 
-    // Cas 1: Usuari amb contrasenya definitiva ja establerta (NO bucle de setup)
+    // Cas 1: Usuari amb contrasenya definitiva ja establerta
     if (hasConfiguredPassword) {
-      // Si intenta accedir amb el provisional '1234', ha de quedar COMPLETAMENT INVALIDAT
+      // Si intenta accedir amb el provisional '1234', queda completament invalidat
       if (attemptPassword === '1234') {
-        try {
-          const clientIp = extractClientIp(request);
-          recordIntrusionEvent({
-            ip: clientIp,
-            route: '/api/auth/login',
-            method: 'POST',
-            attemptType: 'Força Bruta',
-            userAgent: request.headers.get('user-agent') || 'Desconegut',
-            details: `Intent d'utilització de la clau provisional '1234' bloquejada (Usuari: ${userRecord.nomComplet})`,
-            severity: 'CRITICAL',
-            status: 'HONEYPOT_TRIGGERED',
-            locationInfo: 'Xarxa Externa d\'Intrusió'
-          });
-        } catch {}
+        recordIntrusionEvent({
+          ip: clientIp,
+          route: '/api/auth/login',
+          method: 'POST',
+          attemptType: 'Força Bruta',
+          userAgent: request.headers.get('user-agent') || 'Desconegut',
+          details: `Intent d'utilització de la clau provisional '1234' bloquejada (Usuari: ${userRecord.nomComplet})`,
+          severity: 'CRITICAL',
+          status: 'HONEYPOT_TRIGGERED',
+          locationInfo: 'Xarxa Externa d\'Intrusió',
+        });
 
         return NextResponse.json(
           {
             success: false,
             error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}. La clau provisional 1234 ha quedat invalidada.`,
-            triggerHoneypot: true
+            triggerHoneypot: true,
           },
           { status: 401 }
         );
@@ -198,26 +135,23 @@ export async function POST(request: Request) {
 
       const isCorrect = verifyPassword(attemptPassword, userRecord.passwordHash!);
       if (!isCorrect) {
-        try {
-          const clientIp = extractClientIp(request);
-          recordIntrusionEvent({
-            ip: clientIp,
-            route: '/api/auth/login',
-            method: 'POST',
-            attemptType: 'Login Fallit',
-            userAgent: request.headers.get('user-agent') || 'Desconegut',
-            details: `Clau d'accés errònia per a l'usuari ${userRecord.nomComplet} (${userRecord.dni})`,
-            severity: 'HIGH',
-            status: 'BLOCKED',
-            locationInfo: 'IP de Proves'
-          });
-        } catch {}
+        recordIntrusionEvent({
+          ip: clientIp,
+          route: '/api/auth/login',
+          method: 'POST',
+          attemptType: 'Login Fallit',
+          userAgent: request.headers.get('user-agent') || 'Desconegut',
+          details: `Clau d'accés errònia per a l'usuari ${userRecord.nomComplet} (${userRecord.dni})`,
+          severity: 'HIGH',
+          status: 'BLOCKED',
+          locationInfo: 'IP d\'Accés',
+        });
 
         return NextResponse.json(
           {
             success: false,
             error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`,
-            triggerHoneypot: true
+            triggerHoneypot: true,
           },
           { status: 401 }
         );
@@ -226,7 +160,7 @@ export async function POST(request: Request) {
       // Verificació de caducitat forçosa a 90 dies (ENS Nivell Alt)
       const lastChangeDate = userRecord.passwordUpdatedAt || userRecord.passwordSetAt || userRecord.dataCreacio;
       const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
-      const isExpired = lastChangeDate ? (Date.now() - new Date(lastChangeDate).getTime() >= ninetyDaysMs) : false;
+      const isExpired = lastChangeDate ? Date.now() - new Date(lastChangeDate).getTime() >= ninetyDaysMs : false;
 
       if (isExpired) {
         return NextResponse.json({
@@ -236,150 +170,87 @@ export async function POST(request: Request) {
           dni: userRecord.dni,
           userId: userRecord.id,
           name: userRecord.nomComplet,
-          message: "La teva contrasenya ha superat el període màxim de 90 dies (ENS). Has d'establir-ne una de nova per continuar"
+          message: "La teva contrasenya ha superat el període màxim de 90 dies (ENS). Has d'establir-ne una de nova per continuar",
         });
       }
-      // Contrasenya vàlida i vigent (< 90 dies) -> sessió autoritzada directament
     } else {
       // Cas 2: Primer inici o requeriment de canvi de clau
       const isInitialMatch = Boolean(
-        !attemptPassword || 
-        attemptPassword === '1234' || 
+        !attemptPassword ||
+        attemptPassword === '1234' ||
         (userRecord.passwordHash && verifyPassword(attemptPassword, userRecord.passwordHash))
       );
 
-      if (isInitialMatch) {
-        return NextResponse.json({
-          success: true,
-          requirePasswordSetup: true,
-          dni: userRecord.dni,
-          userId: userRecord.id,
-          name: userRecord.nomComplet,
-          message: `Primer inici de sessió detectat per a l'usuari ${userRecord.nomComplet}. És obligatori canviar la contrasenya inicial.`
-        });
-      } else {
-        try {
-          const clientIp = extractClientIp(request);
-          recordIntrusionEvent({
-            ip: clientIp,
-            route: '/api/auth/login',
-            method: 'POST',
-            attemptType: 'Login Fallit',
-            userAgent: request.headers.get('user-agent') || 'Desconegut',
-            details: `Clau inicial incorrecta per a ${userRecord.nomComplet}`,
-            severity: 'HIGH',
-            status: 'BLOCKED',
-            locationInfo: 'IP de Proves'
-          });
-        } catch {}
-
+      if (!isInitialMatch) {
         return NextResponse.json(
           {
             success: false,
-            error: `Clau d'accés incorrecta per a l'usuari ${userRecord.nomComplet}.`,
-            triggerHoneypot: true
+            error: `Clau d'accés incorrecta per a la configuració inicial de ${userRecord.nomComplet}.`,
           },
           { status: 401 }
         );
       }
+
+      return NextResponse.json({
+        success: true,
+        requirePasswordSetup: true,
+        dni: userRecord.dni,
+        userId: userRecord.id,
+        name: userRecord.nomComplet,
+        message: 'Primer inici de sessió detectat. Per protocol de seguretat heu d’establir la contrasenya definitiva.',
+      });
     }
 
-    // Sessió validada amb èxit
+    // Autenticació reeixida -> Generació de sessió criptogràfica HMAC-SHA256
     const authenticatedUser = {
       userId: userRecord.id,
       dni: userRecord.dni,
       name: userRecord.nomComplet,
       email: userRecord.email,
       role: userRecord.rolPrincipal,
-      roleLabel: userRecord.rolPrincipal === 'SUPERADMIN' 
-        ? 'SuperAdmin · Control Total Catalunya & IETI' 
-        : `${userRecord.rolPrincipal} · BancActiu`,
-      institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
-      authenticated: true,
-      authMethod: `Credencials Corporatives (${userRecord.dni})`,
-      passwordConfigured: true,
-      mustChangePassword: false,
-      isFirstLogin: false,
-      loginTime: new Date().toISOString(),
+      roleLabel: userRecord.carrec || 'SuperAdmin TI',
+      institution: 'BancActiu Catalunya',
+      authMethod: 'Credencials Corporatives (ENS Nivell Alt)',
     };
+
+    const sessionToken = createSessionToken(authenticatedUser);
 
     const response = NextResponse.json({
       success: true,
-      user: authenticatedUser,
-      message: 'Sessió iniciada correctament al Gateway Launcher BancActiu Nexus'
+      user: {
+        userId: authenticatedUser.userId,
+        dni: authenticatedUser.dni,
+        name: authenticatedUser.name,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role,
+        roleLabel: authenticatedUser.roleLabel,
+        institution: authenticatedUser.institution,
+        authenticated: true,
+        authMethod: authenticatedUser.authMethod,
+      },
+      message: `Sessió iniciada correctament com a ${userRecord.nomComplet}.`,
     });
 
-    const sessionString = encodeURIComponent(JSON.stringify(authenticatedUser));
-    response.cookies.set('bancactiu_session', sessionString, {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 8
-    });
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, SESSION_COOKIE_OPTIONS);
 
-    // Refrescar i garantir la persistència del Vault a la cookie (1 any)
-    try {
-      const cookieHeader = request.headers.get('cookie') || '';
-      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
-      let vault: Record<string, any> = {};
-      if (match) {
-        try {
-          vault = JSON.parse(decodeURIComponent(match[1]));
-        } catch {
-          vault = {};
-        }
-      }
-      if (hasConfiguredPassword && userRecord.passwordHash) {
-        const vaultEntry = {
-          passwordHash: userRecord.passwordHash,
-          mustChangePassword: false,
-          isFirstLogin: false,
-          passwordHistory: userRecord.passwordHistory || [userRecord.passwordHash],
-          updatedAt: new Date().toISOString()
-        };
-        vault[userRecord.dni.toUpperCase()] = vaultEntry;
-        if (userRecord.dni.toUpperCase() === 'ADMINISTRADOR' || userRecord.id === 'Administrador') {
-          vault['ADMINISTRADOR'] = vaultEntry;
-          vault['ADMIN'] = vaultEntry;
-        }
-        response.cookies.set('bancactiu_auth_vault', encodeURIComponent(JSON.stringify(vault)), {
-          path: '/',
-          httpOnly: false,
-          sameSite: 'strict',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 60 * 60 * 24 * 365
-        });
-
-        // Cookie de volta individual indexada per DNI
-        response.cookies.set(`bancactiu_vault_${userRecord.dni.toUpperCase()}`, encodeURIComponent(JSON.stringify(vaultEntry)), {
-          path: '/',
-          httpOnly: false,
-          sameSite: 'strict',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 60 * 60 * 24 * 365
-        });
-      }
-    } catch {
-      // Ignorar fallback
-    }
-
-    // Registre immutable Merkle de l'inici de sessió per credencials
+    // Registre immutable Merkle d'auditoria
     try {
       appendAuditBlock(
-        authenticatedUser.dni,
-        'CREDENTIALS_LOGIN_SUCCESS',
-        { userId: authenticatedUser.userId, role: authenticatedUser.role },
-        request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1'
+        userRecord.dni,
+        'LOGIN_SUCCESS_ENS',
+        { dni: userRecord.dni, email: userRecord.email, role: userRecord.rolPrincipal },
+        clientIp,
+        { ensLevel: 'HIGH' }
       );
     } catch (err) {
-      console.warn('[MERKLE-AUDIT] Error registrant bloc:', err);
+      console.warn('[MERKLE-AUDIT] Error registrant bloc de login:', err);
     }
 
     return response;
-  } catch (err: any) {
+  } catch (error: any) {
+    console.error('Error fatal a POST /api/auth/login:', error);
     return NextResponse.json(
-      { success: false, error: err.message || 'Error intern durant l\'autenticació' },
+      { success: false, error: 'Error intern processant l\'autenticació corporativa.' },
       { status: 500 }
     );
   }

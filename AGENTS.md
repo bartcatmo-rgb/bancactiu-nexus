@@ -13,8 +13,8 @@ En cualquier operación de Git dentro de este repositorio (`apps/bancactiu-nexus
 ## 3. Ring-Fencing de Credenciales y Autenticación (Estricto e Inviolable)
 - Los archivos `/login`, `middleware.ts`, `lib/server-credentials-store.ts`, `lib/auth-security.ts` NO se deben modificar sin autorización expresa.
 - Únicamente existen dos usuarios oficiales autorizados en el almacén de credenciales:
-  1. `52622304Y` - Bartolomé Cachinero Moreno (SuperAdmin)
-  2. `47956602S` - Marc Cachinero Baranda (SuperAdmin)
+  1. `52622304Y` - SuperAdmin Govern TI
+  2. `47956602S` - SuperAdmin Pentest TI
 - Prohibido reintroducir datos de prueba obsoletos o usuarios no autorizados.
 
 ## 4. Blindaje de Despliegue Silencioso (PROHIBIDO VERCEL CLI)

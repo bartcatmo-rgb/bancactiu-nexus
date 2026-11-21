@@ -279,7 +279,7 @@ export function KenzoAssistant() {
       if (lower.includes('aparença') || lower.includes('perfil') || lower.includes('kenza') || lower.includes('kenzo') || lower.includes('core')) {
         reply = `Podeu canviar d'aparença en qualsevol moment utilitzant el selector superior: Kenzo (Masculí/Executiu), Kenza (Femenina/Executiva) o Kenz Core (Hologràfic/Tecnològic). La vostra preferència es manté guardada.`;
       } else if (lower.includes('auditoria') || lower.includes('seguretat') || lower.includes('vulnerabilitat')) {
-        reply = `Auditoria completada (${currentProfile.name}): Perímetre protegit amb Zero-Trust. Comptes acreditats: Marc Cachinero Baranda (DNI 48956602Z) i Administrador (IETI). Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.`;
+        reply = `Auditoria completada (${currentProfile.name}): Perímetre protegit amb Zero-Trust. Comptes acreditats: SuperAdmin Pentest TI (DNI 47956602S) i SuperAdmin Govern TI (DNI 52622304Y). Middleware actiu a Vercel Producció amb compliment ENS Nivell Alt (99.4%) i RGPD.`;
       } else if (lower.includes('metrica') || lower.includes('salut') || lower.includes('dades')) {
         reply = 'Mètriques actuals: 2.150 ajudes tècniques en circulació, taxa de reutilització comunitària del 94.2% i temps de resposta d\'interoperabilitat de 16.4ms.';
       } else if (lower.includes('slide') || lower.includes('presentacio') || lower.includes('diapositiva')) {
@@ -337,7 +337,7 @@ export function KenzoAssistant() {
                 <Lock className="w-5 h-5 text-emerald-400" />
                 <div>
                   <div className="text-xs font-bold text-white">Identitat d'Accés Superadmin</div>
-                  <div className="text-[10px] text-slate-400">Vinculada a Marc Cachinero Baranda (48956602Z) i Administrador</div>
+                  <div className="text-[10px] text-slate-400">Vinculada a SuperAdmin Pentest TI (47956602S) i SuperAdmin Govern TI</div>
                 </div>
               </div>
               <GlassBadge variant="emerald">Validat 100%</GlassBadge>

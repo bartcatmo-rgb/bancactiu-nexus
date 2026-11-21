@@ -2,10 +2,91 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { resolveTenant } from './lib/tenant';
 
-export function middleware(request: NextRequest) {
+let ephemeralEdgeDevSecret: string | null = null;
+
+function getEdgeSessionSecret(): string {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return 'build-ephemeral-secret-phase-production-build';
+    }
+    throw new Error('[SECURITY FATAL] SESSION_SECRET obligatòria en entorns de producció (ENS Nivell Alt).');
+  }
+
+  if (!ephemeralEdgeDevSecret) {
+    ephemeralEdgeDevSecret = 'bancactiu_dev_edge_session_secret_2026_fallback!';
+  }
+  return ephemeralEdgeDevSecret;
+}
+
+function base64UrlToUint8Array(b64url: string): Uint8Array {
+  let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) {
+    b64 += '=';
+  }
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function verifySessionEdge(token: string | undefined): Promise<any | null> {
+  if (!token || typeof token !== 'string') return null;
+
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+
+  const [payloadB64, signatureB64] = parts;
+  if (!payloadB64 || !signatureB64) return null;
+
+  try {
+    const secret = getEdgeSessionSecret();
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const sigBuf = base64UrlToUint8Array(signatureB64);
+    const dataBuf = enc.encode(payloadB64);
+    const isValid = await crypto.subtle.verify('HMAC', key, sigBuf as any, dataBuf as any);
+    if (!isValid) return null;
+
+    const jsonStr = new TextDecoder().decode(base64UrlToUint8Array(payloadB64));
+    const payload = JSON.parse(jsonStr);
+
+    const now = Math.floor(Date.now() / 1000);
+    if (!payload.exp || typeof payload.exp !== 'number' || payload.exp < now) {
+      return null;
+    }
+
+    if (payload.idleExp && typeof payload.idleExp === 'number' && payload.idleExp < now) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  // 1. Bloqueig immediat de bypass de Middleware (CVE-2025-29927)
+  if (request.headers.has('x-middleware-subrequest')) {
+    return new NextResponse('Forbidden: direct subrequest invocation denied', { status: 403 });
+  }
+
   const { pathname } = request.nextUrl;
 
-  // 1. Resolució Dinàmica de Multi-Tenant contextual basada en IP d'accés i Host
+  // 2. Resolució Dinàmica de Multi-Tenant contextual
   const forwardedFor = request.headers.get('x-forwarded-for');
   const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || '127.0.0.1');
   const requestHost = request.headers.get('host') || request.nextUrl.host || '';
@@ -25,87 +106,63 @@ export function middleware(request: NextRequest) {
       themeColor: tenant.themeColor,
       allowedModules: tenant.allowedModules,
       isDefault: tenant.isDefault,
-      clientIp
     })
   );
 
   const applyTenantHeaders = (res: NextResponse) => {
-    res.headers.set('x-tenant-id', tenant.id);
-    res.headers.set('x-tenant-code', tenant.code);
-    res.headers.set('x-tenant-name', tenant.name);
-    res.headers.set('x-tenant-badge', tenant.badgeLabel);
-    res.headers.set('x-centre-nom', tenant.name);
-    res.headers.set('x-client-ip', clientIp);
-    res.headers.set('X-SOAR-Protection', 'ACTIVE-MILITARY-GRADE');
-    res.headers.set('X-Audit-Merkle', 'SHA-256-CHAINED');
     res.cookies.set('bancactiu_tenant', tenantCookieValue, {
       path: '/',
       httpOnly: false,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24
+      maxAge: 60 * 60 * 24,
     });
     return res;
   };
 
-  // 2. Neteja imperativa i gestió de la ruta pública /login
-  if (pathname === '/login') {
-    const response = NextResponse.next();
-    // Destrueix qualsevol cookie de sessió residual en entrar a login
-    response.cookies.delete('bancactiu_session');
-    return applyTenantHeaders(response);
-  }
-
-  // 3. Rutes permeses sense autenticació (públiques, auth endpoints, recursos estàtics)
+  // 3. Rutes públiques d'autenticació i recursos estàtics
   if (
+    pathname === '/login' ||
+    pathname === '/api/auth/login' ||
+    pathname === '/api/auth/logout' ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/auth') ||
-    pathname.startsWith('/api/sync/delta') ||
     pathname === '/favicon.ico' ||
     pathname.startsWith('/docs') ||
     pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|woff2?|map|pdf)$/)
   ) {
+    if (pathname === '/login') {
+      const response = NextResponse.next();
+      response.cookies.delete('bancactiu_session');
+      return applyTenantHeaders(response);
+    }
     const response = NextResponse.next();
     return applyTenantHeaders(response);
   }
 
-  // 4. Comprovació de la sessió criptogràfica Zero-Trust
+  // 4. Verificació criptogràfica real de sessió en Edge Runtime (Web Crypto HMAC-SHA256)
   const sessionCookie = request.cookies.get('bancactiu_session')?.value;
-  let isValidSession = false;
+  const verifiedSession = await verifySessionEdge(sessionCookie);
 
-  if (sessionCookie) {
-    try {
-      const decoded = decodeURIComponent(sessionCookie);
-      const session = JSON.parse(decoded);
-      if (session && (session.authenticated === true || session.role) && (session.user || session.role || session.dni)) {
-        isValidSession = true;
-      }
-    } catch {
-      isValidSession = false;
-    }
-  }
-
-  // 5. Bloqueig d'accés no autoritzat (Redirecció estricta a /login)
-  if (!isValidSession) {
+  // 5. Bloqueig estricte d'accés no autenticat
+  if (!verifiedSession) {
     if (pathname.startsWith('/api/')) {
       const unauthorizedRes = NextResponse.json(
         {
           error: 'Accés no autoritzat',
-          message: 'Sessió de SuperAdmin requerida per accedir als serveis de BancActiu Nexus.',
-          code: 'UNAUTHORIZED_ACCESS_DENIED'
+          message: 'Sessió corporativa vàlida requerida per accedir als serveis de BancActiu Nexus.',
+          code: 'UNAUTHORIZED_ACCESS_DENIED',
         },
         { status: 401 }
       );
+      unauthorizedRes.cookies.delete('bancactiu_session');
       return applyTenantHeaders(unauthorizedRes);
     }
 
-    // Redirigir a /login guardant el paràmetre de retorn (mai no redirigir cap a /login mateix)
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/' && pathname !== '' && pathname !== '/login' && !pathname.startsWith('/login')) {
       loginUrl.searchParams.set('redirect', pathname);
     }
     const redirectRes = NextResponse.redirect(loginUrl);
-    // Eliminar qualsevol cookie invàlida o residual a la redirecció
     redirectRes.cookies.delete('bancactiu_session');
     return applyTenantHeaders(redirectRes);
   }
@@ -116,9 +173,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static files and next internal assets
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

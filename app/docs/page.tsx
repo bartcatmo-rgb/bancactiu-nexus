@@ -33,13 +33,13 @@ const documents = [
     icon: <ShieldCheck className="w-7 h-7 text-purple-400" />,
     gradient: 'from-purple-600/30 to-indigo-600/30',
     border: 'border-purple-500/30',
-    desc: "Guia completa de control d'infraestructura, alta jeràrquica descentralitzada de centres sanitaris i educatius de Catalunya (IETI), gestió d'usuaris vinculada a Marc Cachinero Baranda (DNI 48956602Z) i Administrador, i execució de simulacions de càrrega massiva.",
+    desc: "Guia completa de control d'infraestructura, alta jeràrquica descentralitzada de centres sanitaris i educatius de Catalunya (IETI), gestió d'usuaris vinculada a SuperAdmin Pentest TI (DNI 47956602S) i SuperAdmin Govern TI (DNI 52622304Y), i execució de simulacions de càrrega massiva.",
     pdfUrl: '/docs/MANUAL_SUPERADMIN_NEXUS_2.0.pdf',
     size: '196 KB',
     version: 'v3.0-PROD',
     highlights: [
-      'Vinculació oficial SuperAdmin DNI 48956602Z (Marc Cachinero Baranda)',
-      'Protocol d’activació de contrasenya obligatòria docent (Administrador)',
+      'Vinculació oficial SuperAdmin DNI 47956602S (SuperAdmin Pentest TI)',
+      'Protocol d’activació de contrasenya obligatòria docent (Govern TI)',
       'Alta descentralitzada de centres i CAPS (Institut Esteve Terrades i Illa)',
       'Laboratori de càrrega GAPIC & IETI (1-3 anys)'
     ]
@@ -272,7 +272,7 @@ export default function DocsPage() {
           <div className="mt-2 sm:mt-0 flex gap-4">
             <span className="text-emerald-400 font-medium">ENS Nivell Alt Verificat</span>
             <span>·</span>
-            <span className="text-purple-400 font-medium">SuperAdmin Marc Cachinero (48956602Z)</span>
+            <span className="text-purple-400 font-medium">SuperAdmin Pentest TI (47956602S)</span>
           </div>
         </footer>
       </div>

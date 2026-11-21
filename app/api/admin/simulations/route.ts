@@ -127,9 +127,10 @@ const FIVE_YEAR_BENCHMARKS: SimulationYearProjection[] = [
 
 export async function POST(request: Request): Promise<NextResponse> {
   const guard = guardApiAccess(request, {
-    requiredRoles: ['SUPER_ADMIN'],
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN'],
     isWriteOperation: true,
   });
+  if (!guard.allowed) return guard.response!;
 
   // Extreure el cos
   let body: any = {};
@@ -139,21 +140,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     body = {};
   }
 
-  const actorDni = (body.adminDni || request.headers.get('x-user-dni') || guard.actorDni || '').trim().toUpperCase();
-  const isAuthorizedSuperAdmin = isSuperAdminEmergencyActor(actorDni) || 
-                                 actorDni === '48956602Z' || 
-                                 actorDni === '52622304Y' || 
-                                 guard.actorRol === 'SUPER_ADMIN';
-
-  if (!isAuthorizedSuperAdmin) {
-    return NextResponse.json(
-      {
-        ok: false,
-        missatge: 'Accés no autoritzat: Només els Superadministradors acreditats (com 48956602Z) tenen permís per executar l\'estudi de simulació i estrès massiu.',
-      },
-      { status: 403 }
-    );
-  }
+  const actorDni = (guard.actorDni || '52622304Y').trim().toUpperCase();
 
   const mode = body.mode === 'custom' ? 'custom' : 'massive';
   const simulationYears = Math.min(Math.max(Number(body.simulationYears) || 5, 1), 5);

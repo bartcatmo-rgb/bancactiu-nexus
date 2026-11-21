@@ -2,25 +2,15 @@ import { NextResponse } from 'next/server';
 import { getSoarIncidents, liftSoarQuarantine } from '@/lib/soar-engine';
 import { verifyMerkleChainIntegrity, getRecentAuditBlocks } from '@/lib/audit-merkle-chain';
 import { guardApiAccess } from '@/lib/security-api-guard';
-import { isSuperAdminEmergencyActor } from '@/lib/security-lockdown';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: Request): Promise<NextResponse> {
   const guard = guardApiAccess(request, {
-    requiredRoles: ['SUPER_ADMIN']
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN']
   });
-
-  const actorDni = (request.headers.get('x-user-dni') || guard.actorDni || '').trim().toUpperCase();
-  const isSuperAdmin = isSuperAdminEmergencyActor(actorDni) || actorDni === '48956602Z' || guard.actorRol === 'SUPER_ADMIN';
-
-  if (!isSuperAdmin) {
-    return NextResponse.json(
-      { ok: false, missatge: 'Accés restringit a Superadministradors acreditats.' },
-      { status: 403 }
-    );
-  }
+  if (!guard.allowed) return guard.response!;
 
   const incidents = getSoarIncidents();
   const merkleVerification = verifyMerkleChainIntegrity();
@@ -43,9 +33,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   const guard = guardApiAccess(request, {
-    requiredRoles: ['SUPER_ADMIN'],
+    requiredRoles: ['SUPER_ADMIN', 'SUPERADMIN'],
     isWriteOperation: true
   });
+  if (!guard.allowed) return guard.response!;
 
   const body = await request.json().catch(() => ({}));
   const { action, clientIp } = body;

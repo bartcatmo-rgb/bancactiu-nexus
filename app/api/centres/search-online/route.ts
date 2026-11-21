@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { guardApiAccess } from '@/lib/security-api-guard';
+import { searchOnlineRateLimiter } from '@/lib/security/rate-limit';
 
 export interface NormalizedCentreOnline {
   code: string;
@@ -59,7 +61,6 @@ function inferInstitutionalScope(nom: string, categoria: string = ''): {
   return { tipologia: 'ENTITAT_LOCAL', matriu: 'ENTITAT_LOCAL', ambit: 'Entitat Local / Comunitària' };
 }
 
-// Magatzem en memòria cau per al catàleg estructurat de Catalunya (evita llegir disc a cada petició)
 let cachedIcsCatalog: NormalizedCentreOnline[] | null = null;
 
 function loadStructuredCatalog(): NormalizedCentreOnline[] {
@@ -102,14 +103,15 @@ function loadStructuredCatalog(): NormalizedCentreOnline[] {
                         ambit: scope.ambit,
                         sector: sectorNom,
                         gapic: gapicNom,
-                        address: c.adreca || 'Sense adreça especificada',
-                        postalCode: c.cp || '',
-                        municipality: c.municipi || municipiDef,
+                        address: c.adreca || 'Catalunya',
+                        postalCode: c.codiPostal || '',
+                        municipality: municipiDef,
                         abs: absNom,
-                        phone: c.tel || '932 89 67 00',
-                        email: 'atencio.ciutadana@gencat.cat',
+                        phone: c.telefon || '932 89 67 00',
+                        email: c.email || 'contacte.salut@gencat.cat',
                         tipologia: scope.tipologia,
                         matriu: scope.matriu,
+                        coordinates: c.coordenades,
                         source: 'ONLINE_CATSALUT',
                       });
                     }
@@ -130,8 +132,24 @@ function loadStructuredCatalog(): NormalizedCentreOnline[] {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
+  // Verificació d'autenticació perimetral Zero-Trust
+  const guard = guardApiAccess(request);
+  if (!guard.allowed) return guard.response!;
+
+  // Rate Limiting Anti-Abús (30 req/minut per IP)
+  const rateLimit = searchOnlineRateLimiter.check(guard.clientIp);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit excedit (màxim 30 peticions/minut).' },
+      { status: 429 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get('q')?.trim() || '';
+  const rawQ = searchParams.get('q')?.trim() || '';
+
+  // Sanitització estricta de mida (Anti-DoS / SSRF <= 80 caràcters)
+  const q = rawQ.slice(0, 80);
 
   if (!q || q.length < 2) {
     return NextResponse.json({
@@ -158,8 +176,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     results.push(item);
   };
 
-  // 1. Consulta en temps real a l'API de Dades Obertes de la Generalitat de Catalunya
-  // Provant tant el dataset 8gmd-gz7i (Equipaments de Catalunya) com el recurs 7423-3959
+  // 1. Consulta en temps real a l'API oficial de Dades Obertes de Catalunya (Anti-SSRF: destí fix i redirect: 'error')
   const sodaUrls = [
     `https://analisi.transparenciacatalunya.cat/resource/8gmd-gz7i.json?$q=${encodeURIComponent(q)}&$limit=25`,
     `https://analisi.transparenciacatalunya.cat/resource/7423-3959.json?$q=${encodeURIComponent(q)}&$limit=25`,
@@ -173,6 +190,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       const res = await fetch(url, {
         signal: controller.signal,
         headers: { Accept: 'application/json' },
+        redirect: 'error',
       });
       clearTimeout(timeoutId);
 
@@ -219,11 +237,11 @@ export async function GET(request: Request): Promise<NextResponse> {
               source: 'ONLINE_CATSALUT',
             });
           }
-          break; // Si el primer dataset ja ha tornat resultats en línia vàlids, continuem
+          break;
         }
       }
     } catch {
-      // Ignorar timeouts o errors de xarxa per passar fluidament al fallback estructurat
+      // Fallback transparent
     }
   }
 
@@ -242,7 +260,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  // Ordenar prioritzant resultats sanitaris (CAPs i Serveis Sanitaris) primer
+  // Ordenar prioritzant resultats sanitaris
   results.sort((a, b) => {
     const priority = (tipus: string) => {
       if (tipus === 'CAP') return 1;

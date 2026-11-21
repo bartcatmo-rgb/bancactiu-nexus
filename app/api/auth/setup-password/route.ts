@@ -2,11 +2,29 @@ import { NextResponse } from 'next/server';
 import { sharedDb } from '@bancactiu/db';
 import { hashPassword, verifyPassword } from '@/lib/crypto-security';
 import { getServerUsers, matchesIdentifier, saveUserPasswordDirect } from '@/lib/server-credentials-store';
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/security/session';
+import { setupPasswordRateLimiter } from '@/lib/security/rate-limit';
+import { extractClientIp, recordIntrusionEvent } from '@/lib/intrusion-store';
+import { appendAuditBlock } from '@/lib/audit-merkle-chain';
 
 export async function POST(request: Request) {
+  const clientIp = extractClientIp(request);
+
+  // Rate Limiting per IP per a prevenció de força bruta (5 intents/minut)
+  const rateLimit = setupPasswordRateLimiter.check(clientIp);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'S\'ha superat el límit d\'intents de canvi de contrasenya. Espereu 1 minut abans de tornar-ho a provar.',
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { dni, newPassword, confirmPassword } = body;
+    const { dni, currentPassword, newPassword, confirmPassword } = body;
 
     const normalizedDni = (dni || '').trim().toUpperCase();
 
@@ -16,9 +34,62 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Operació denegada. Usuari no trobat a la base de dades institucional.'
+          error: 'Operació denegada. Usuari no trobat a la base de dades institucional.',
         },
         { status: 403 }
+      );
+    }
+
+    // Sincronitzar amb el magatzem del servidor
+    try {
+      const serverUsers = getServerUsers();
+      const sUser = serverUsers.find((u) => matchesIdentifier(u, normalizedDni));
+      if (sUser && sUser.currentPassword) {
+        user.passwordHash = sUser.currentPassword;
+        user.mustChangePassword = sUser.mustChangePassword;
+        if (Array.isArray(sUser.passwordHistory)) {
+          user.passwordHistory = sUser.passwordHistory;
+        }
+      }
+    } catch {}
+
+    // Verificació obligatòria de la contrasenya actual / provisional
+    const cleanCurrent = (currentPassword || '').trim();
+    let isCurrentValid = false;
+
+    if (user.mustChangePassword) {
+      // En primer inici es permet el provisional 1234 o el hash inicial
+      isCurrentValid =
+        !cleanCurrent ||
+        cleanCurrent === '1234' ||
+        (Boolean(user.passwordHash) && verifyPassword(cleanCurrent, user.passwordHash!));
+    } else {
+      // En canvi regular o caducitat 90 dies cal conèixer la contrasenya vigent
+      isCurrentValid =
+        Boolean(cleanCurrent) &&
+        Boolean(user.passwordHash) &&
+        verifyPassword(cleanCurrent, user.passwordHash!);
+    }
+
+    if (!isCurrentValid) {
+      recordIntrusionEvent({
+        ip: clientIp,
+        route: '/api/auth/setup-password',
+        method: 'POST',
+        attemptType: 'Accés No Autoritzat',
+        userAgent: request.headers.get('user-agent') || 'Desconegut',
+        details: `Intent de canvi de clau sense contrasenya actual vàlida per a l'usuari ${user.nomComplet} (${user.dni})`,
+        severity: 'HIGH',
+        status: 'BLOCKED',
+        locationInfo: 'IP d\'Accés',
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'La contrasenya actual proporcionada no és correcta.',
+        },
+        { status: 401 }
       );
     }
 
@@ -26,13 +97,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'La contrasenya ha de tenir com a mínim 10 caràcters (ENS Nivell Alt).'
+          error: 'La contrasenya ha de tenir com a mínim 10 caràcters (ENS Nivell Alt).',
         },
         { status: 400 }
       );
     }
 
-    // Comprovació de complexitat: majúscula, minúscula, número i caràcter especial (ENS Nivell Alt)
+    // Comprovació de complexitat ENS Nivell Alt
     const hasUpper = /[A-Z]/.test(newPassword);
     const hasLower = /[a-z]/.test(newPassword);
     const hasNumber = /[0-9]/.test(newPassword);
@@ -42,7 +113,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'La contrasenya ha de contenir com a mínim una majúscula, una minúscula, un número i un caràcter especial (ENS Nivell Alt).'
+          error: 'La contrasenya ha de contenir com a mínim una majúscula, una minúscula, un número i un caràcter especial (ENS Nivell Alt).',
         },
         { status: 400 }
       );
@@ -52,65 +123,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Les contrasenyes introduïdes no coincideixen.'
+          error: 'Les contrasenyes introduïdes no coincideixen.',
         },
         { status: 400 }
       );
     }
 
-    // Validació estricta de l'historial (últimes 5 contrasenyes utilitzades + clau inicial 1234 - ENS Nivell Alt)
+    // Validació de l'historial (últimes 5 contrasenyes + provisional 1234)
     const history: string[] = Array.isArray(user.passwordHistory) ? [...user.passwordHistory] : [];
     if (user.passwordHash && !history.includes(user.passwordHash)) {
       history.unshift(user.passwordHash);
     }
 
-    try {
-      const serverUsers = getServerUsers();
-      const sUser = serverUsers.find((u) => matchesIdentifier(u, normalizedDni));
-      if (sUser) {
-        if (sUser.currentPassword && !history.includes(sUser.currentPassword)) {
-          history.unshift(sUser.currentPassword);
-        }
-        if (Array.isArray(sUser.passwordHistory)) {
-          for (const h of sUser.passwordHistory) {
-            if (h && !history.includes(h)) {
-              history.push(h);
-            }
-          }
-        }
-      }
-    } catch {
-      // Fallback a dades en memòria
-    }
-
-    // Invalida que es pugui reutilitzar el "1234" provisional com a nova contrasenya
-    if (!history.includes('1234')) {
-      history.push('1234');
-    }
-
-    // Comprovar també amb l'historial del vault persistent de la cookie si existeix
-    try {
-      const cookieHeader = request.headers.get('cookie') || '';
-      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
-      if (match) {
-        const vault = JSON.parse(decodeURIComponent(match[1]));
-        const vEntry = vault[normalizedDni] || (normalizedDni.includes('ADMIN') ? vault['ADMINISTRADOR'] : null);
-        if (vEntry?.passwordHistory && Array.isArray(vEntry.passwordHistory)) {
-          for (const h of vEntry.passwordHistory) {
-            if (h && !history.includes(h)) {
-              history.push(h);
-            }
-          }
-        }
-        if (vEntry?.passwordHash && !history.includes(vEntry.passwordHash)) {
-          history.unshift(vEntry.passwordHash);
-        }
-      }
-    } catch {
-      // Fallback
-    }
-
-    // Validar contra les últimes 5 contrasenyes o 1234
     const last5 = history.slice(0, 5);
     const matchesPrevious =
       newPassword.trim() === '1234' ||
@@ -123,17 +147,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Per seguretat (ENS Nivell Alt), no pots reutilitzar una contrasenya anterior ni la clau inicial'
+          error: 'Per seguretat (ENS Nivell Alt), no pots reutilitzar una contrasenya anterior ni la clau inicial 1234.',
         },
         { status: 400 }
       );
     }
 
-    // Generació de hash criptogràfic segur PBKDF2 (SHA-512)
+    // Generació de hash PBKDF2 amb 210.000 iteracions (ENS Nivell Alt)
     const newHash = hashPassword(newPassword.trim());
     const updatedHistory = [newHash, ...history.filter((h) => h !== newHash)].slice(0, 10);
 
-    // Actualització immediata de l'estat d'usuari a memòria i base de dades
     user.passwordHash = newHash;
     user.mustChangePassword = false;
     user.isFirstLogin = false;
@@ -142,8 +165,6 @@ export async function POST(request: Request) {
     user.passwordHistory = updatedHistory;
 
     await sharedDb.setUserPassword(normalizedDni, newHash, updatedHistory);
-
-    // Persistència a la base de dades privada del servidor
     saveUserPasswordDirect(normalizedDni, newHash, updatedHistory);
 
     const authenticatedUser = {
@@ -152,99 +173,40 @@ export async function POST(request: Request) {
       name: user.nomComplet,
       email: user.email,
       role: user.rolPrincipal,
-      roleLabel: user.rolPrincipal === 'SUPERADMIN' 
-        ? 'SuperAdmin · Control Total Catalunya & IETI' 
-        : `${user.rolPrincipal} · BancActiu`,
-      institution: 'Institut Esteve Terrades i Illa · BancActiu 2.0',
-      authenticated: true,
-      authMethod: `Credencials Personals (${user.dni})`,
-      passwordConfigured: true,
-      mustChangePassword: false,
-      isFirstLogin: false,
-      loginTime: new Date().toISOString(),
+      roleLabel: user.carrec || 'SuperAdmin TI',
+      institution: 'BancActiu Catalunya',
+      authMethod: 'Credencials Corporatives (ENS Nivell Alt)',
     };
 
-    // Actualitzar i persistir el Vault de credencials segures a la cookie perenne (resistent a cold starts en Vercel)
-    let vault: Record<string, any> = {};
-    try {
-      const cookieHeader = request.headers.get('cookie') || '';
-      const match = cookieHeader.match(/bancactiu_auth_vault=([^;]+)/);
-      if (match) {
-        try {
-          vault = JSON.parse(decodeURIComponent(match[1]));
-        } catch {
-          vault = {};
-        }
-      }
-      const headerVault = request.headers.get('x-bancactiu-vault');
-      if (headerVault) {
-        try {
-          const parsedH = JSON.parse(headerVault);
-          vault = { ...vault, ...parsedH };
-        } catch {}
-      }
-      const vaultEntry = {
-        passwordHash: newHash,
-        mustChangePassword: false,
-        isFirstLogin: false,
-        passwordHistory: updatedHistory,
-        updatedAt: new Date().toISOString(),
-      };
-      vault[normalizedDni] = vaultEntry;
-      if (normalizedDni === '52622304Y' || normalizedDni.includes('ADMIN') || normalizedDni === 'BARTO') {
-        vault['52622304Y'] = vaultEntry;
-        vault['ADMINISTRADOR'] = vaultEntry;
-        vault['ADMIN'] = vaultEntry;
-        vault['BARTO'] = vaultEntry;
-      } else if (normalizedDni === '47956602S' || normalizedDni.includes('MARC') || normalizedDni === 'SUPERADMIN') {
-        vault['47956602S'] = vaultEntry;
-        vault['SUPERADMIN'] = vaultEntry;
-        vault['MARC'] = vaultEntry;
-      }
-    } catch (e) {
-      console.warn('[SetupPassword] Error preparant vault:', e);
-    }
+    const sessionToken = createSessionToken(authenticatedUser);
 
     const response = NextResponse.json({
       success: true,
-      user: authenticatedUser,
-      vault,
-      message: `Contrasenya per a l'usuari ${user.nomComplet} configurada correctament. Accés autoritzat.`
+      user: {
+        userId: authenticatedUser.userId,
+        dni: authenticatedUser.dni,
+        name: authenticatedUser.name,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role,
+        roleLabel: authenticatedUser.roleLabel,
+        institution: authenticatedUser.institution,
+        authenticated: true,
+        authMethod: authenticatedUser.authMethod,
+      },
+      message: `Contrasenya per a l'usuari ${user.nomComplet} configurada correctament. Accés autoritzat.`,
     });
 
-    // Desplegar cookie de sessió
-    const sessionString = encodeURIComponent(JSON.stringify(authenticatedUser));
-    response.cookies.set('bancactiu_session', sessionString, {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 8
-    });
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, SESSION_COOKIE_OPTIONS);
 
-    response.cookies.set('bancactiu_auth_vault', encodeURIComponent(JSON.stringify(vault)), {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 365, // 1 any de persistència
-    });
-
-    const individualEntry = vault[normalizedDni] || {
-      passwordHash: newHash,
-      mustChangePassword: false,
-      isFirstLogin: false,
-      passwordHistory: updatedHistory,
-      updatedAt: new Date().toISOString()
-    };
-
-    response.cookies.set(`bancactiu_vault_${normalizedDni}`, encodeURIComponent(JSON.stringify(individualEntry)), {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 365, // 1 any de persistència
-    });
+    try {
+      appendAuditBlock(
+        user.dni,
+        'PASSWORD_CHANGE_SUCCESS_ENS',
+        { dni: user.dni, email: user.email },
+        clientIp,
+        { ensLevel: 'HIGH' }
+      );
+    } catch {}
 
     return response;
   } catch (err: any) {

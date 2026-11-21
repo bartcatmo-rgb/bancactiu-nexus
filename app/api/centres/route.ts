@@ -8,6 +8,9 @@ import { guardApiAccess } from '@/lib/security-api-guard';
  * Llistat i cerca de centres sanitaris i entitats col·laboradores
  */
 export async function GET(request: Request): Promise<NextResponse> {
+  const guard = guardApiAccess(request);
+  if (!guard.allowed) return guard.response!;
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim().toLowerCase() || '';
